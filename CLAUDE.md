@@ -34,13 +34,27 @@ gym-tracker/
 ```
 
 ## Modelo de datos (entidades principales)
+
+Jerarquía central: Usuario → Sesión → Serie → Ejercicio (catálogo).
+Una sesión NO tiene "ejercicios" directamente, tiene series realizadas; cada
+serie referencia un ejercicio del catálogo. Así una sesión puede tener varias
+series del mismo ejercicio con distinto peso/reps.
+
 - **Usuario**: edad, peso, altura, sexo, objetivo (volumen/definición/mantenimiento)
-- **Ejercicio**: nombre, grupo muscular, tipo (compuesto/aislamiento)
+- **Ejercicio** (catálogo): nombre, tipo (compuesto/aislamiento)
+- **GrupoMuscular** (catálogo): nombre (pecho, espalda, pierna, hombro, bíceps, tríceps...)
+- **EjercicioGrupoMuscular** (tabla intermedia, relación muchos-a-muchos):
+  ejercicio_id, grupo_muscular_id, es_principal (bool, para distinguir músculo
+  principal vs secundario de ese ejercicio)
 - **SesionEntrenamiento**: fecha, usuario, notas
 - **Serie**: sesion_id, ejercicio_id, peso, repeticiones, RPE/RIR
 - **RegistroPeso**: usuario, fecha, peso, % grasa (opcional)
 - **RegistroAlimentacion**: usuario, fecha, comida, proteína, carbs, grasas, calorías
 - **RegistroEstadoAnimo**: usuario, fecha, valor (1-5), notas
+
+Nota de diseño: qué grupos musculares trabaja una sesión NO se guarda como
+campo fijo — se calcula dinámicamente a partir de los ejercicios de sus series,
+para evitar que el dato quede desactualizado si cambian los ejercicios.
 
 ## Fases del proyecto
 1. **MVP**: CRUD de usuarios, ejercicios, sesiones/series y alimentación + gráficas básicas de progresión
