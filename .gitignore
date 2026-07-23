@@ -1,5 +1,31 @@
+# --- Python / Backend ---
 venv/
 __pycache__/
-node_modules/
-.env
 *.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# --- Variables de entorno ---
+.env
+.env.local
+
+# --- Node / Frontend ---
+node_modules/
+dist/
+build/
+.vite/
+
+# --- Docker ---
+# (los datos de Postgres persisten en un volumen nombrado gestionado por Docker,
+# no en una carpeta del proyecto, así que normalmente no hace falta nada aquí)
+
+# --- Editor / SO ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
