@@ -48,6 +48,30 @@ gym-tracker/
 3. **Predicción**: modelos de regresión sobre el histórico para predecir progresión de peso/reps
 4. **Análisis de vídeo**: pose estimation (MediaPipe/OpenCV) para evaluar técnica
 
+## Principios de diseño para que el proyecto escale bien
+El proyecto se construye por fases, así que cada pieza debe montarse pensando
+en que se ampliará después, sin necesidad de reescribirla:
+
+- **Separación por capas** (routers → services → models): la lógica de negocio
+  vive en `services/`, nunca directamente en los endpoints. Así, cuando en la
+  Fase 3 añadamos predicción o en la Fase 4 análisis de vídeo, se integran como
+  nuevos servicios sin tocar los endpoints existentes.
+- **Modelos de datos abiertos a extensión**: por ejemplo, `Serie` debe permitir
+  añadir campos opcionales en el futuro (ej. tempo, rango de movimiento) sin
+  romper lo existente. Usar migraciones de Alembic para cada cambio, nunca
+  editar tablas a mano.
+- **Versionado de API desde el inicio**: todos los endpoints bajo `/api/v1/...`,
+  para poder introducir `/api/v2/` en el futuro sin romper el frontend actual.
+- **Configuración por variables de entorno** (`.env`): nunca hardcodear
+  credenciales, URLs o claves — esto facilita mover el proyecto a otro entorno
+  (ej. un servidor con GPU para la Fase 4 de análisis de vídeo).
+- **Desacoplar el futuro análisis de vídeo/IA desde ya**: aunque no se
+  implemente todavía, dejar pensado que el procesamiento pesado (vídeo, ML) se
+  hará en un servicio/worker aparte (ej. cola de tareas), no dentro del mismo
+  proceso que atiende peticiones HTTP normales.
+- **Tests desde el principio**: cada endpoint nuevo con su test, para poder
+  refactorizar con confianza cuando el proyecto crezca.
+
 ## Convenciones de código
 - Python: seguir PEP8, type hints siempre, docstrings en funciones públicas
 - Nombres de tablas/columnas en snake_case, en español (coherente con el dominio)
