@@ -11,3 +11,15 @@ class SesionEntrenamientoRead(BaseModel):
     rutina_id: int
     fecha: date
     notas: str | None
+    completada: bool
+
+
+class UltimaSerieRef(BaseModel):
+    ejercicio_id: int
+    peso: float
+    repeticiones: int
+    fecha: date
+
+
+class IniciarRutinaRead(SesionEntrenamientoRead):
+    ultimas_series: list[UltimaSerieRef]

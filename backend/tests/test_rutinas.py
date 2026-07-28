@@ -245,6 +245,108 @@ def test_iniciar_rutina(client: TestClient) -> None:
     assert cuerpo["rutina_id"] == creada["id"]
     assert cuerpo["usuario_id"] == usuario["id"]
     assert cuerpo["fecha"] == date.today().isoformat()
+    assert cuerpo["completada"] is False
+    assert cuerpo["ultimas_series"] == []
+
+
+def test_iniciar_rutina_incluye_ultima_serie_por_ejercicio(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    press = _crear_ejercicio(client, "Press banca")
+    remo = _crear_ejercicio(client, "Remo")
+    creada = _crear_rutina(
+        client,
+        headers,
+        ejercicios=[
+            {"ejercicio_id": press["id"], "orden": 1, "series_objetivo": 4, "repeticiones_objetivo": 8},
+            {"ejercicio_id": remo["id"], "orden": 2, "series_objetivo": 3, "repeticiones_objetivo": 10},
+        ],
+    )
+
+    # Primera sesión: se registra una serie solo de "Press banca".
+    primera_sesion = client.post(
+        f"/api/v1/rutinas/{creada['id']}/iniciar", headers=headers
+    ).json()
+    client.post(
+        f"/api/v1/sesiones/{primera_sesion['id']}/series/",
+        json={"ejercicio_id": press["id"], "peso": 80.0, "repeticiones": 8},
+        headers=headers,
+    )
+
+    # Segunda sesión de la misma rutina: debe traer la referencia de Press banca
+    # (porque ya tiene una serie previa) y no traer nada de Remo (nunca se hizo).
+    respuesta = client.post(f"/api/v1/rutinas/{creada['id']}/iniciar", headers=headers)
+
+    assert respuesta.status_code == 201
+    cuerpo = respuesta.json()
+    assert len(cuerpo["ultimas_series"]) == 1
+    referencia = cuerpo["ultimas_series"][0]
+    assert referencia["ejercicio_id"] == press["id"]
+    assert referencia["peso"] == 80.0
+    assert referencia["repeticiones"] == 8
+    assert referencia["fecha"] == date.today().isoformat()
+
+
+def test_iniciar_rutina_ultima_serie_es_la_mas_reciente(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    press = _crear_ejercicio(client, "Press banca")
+    creada = _crear_rutina(
+        client,
+        headers,
+        ejercicios=[
+            {"ejercicio_id": press["id"], "orden": 1, "series_objetivo": 4, "repeticiones_objetivo": 8}
+        ],
+    )
+
+    sesion_1 = client.post(f"/api/v1/rutinas/{creada['id']}/iniciar", headers=headers).json()
+    client.post(
+        f"/api/v1/sesiones/{sesion_1['id']}/series/",
+        json={"ejercicio_id": press["id"], "peso": 70.0, "repeticiones": 10},
+        headers=headers,
+    )
+    sesion_2 = client.post(f"/api/v1/rutinas/{creada['id']}/iniciar", headers=headers).json()
+    client.post(
+        f"/api/v1/sesiones/{sesion_2['id']}/series/",
+        json={"ejercicio_id": press["id"], "peso": 85.0, "repeticiones": 6},
+        headers=headers,
+    )
+
+    respuesta = client.post(f"/api/v1/rutinas/{creada['id']}/iniciar", headers=headers)
+
+    referencia = respuesta.json()["ultimas_series"][0]
+    assert referencia["peso"] == 85.0
+    assert referencia["repeticiones"] == 6
+
+
+def test_iniciar_rutina_no_incluye_series_de_otro_usuario(client: TestClient) -> None:
+    _, headers_1 = crear_usuario_autenticado(client)
+    _, headers_2 = crear_usuario_autenticado(client)
+    press = _crear_ejercicio(client, "Press banca")
+
+    rutina_1 = _crear_rutina(
+        client,
+        headers_1,
+        ejercicios=[
+            {"ejercicio_id": press["id"], "orden": 1, "series_objetivo": 4, "repeticiones_objetivo": 8}
+        ],
+    )
+    sesion_1 = client.post(f"/api/v1/rutinas/{rutina_1['id']}/iniciar", headers=headers_1).json()
+    client.post(
+        f"/api/v1/sesiones/{sesion_1['id']}/series/",
+        json={"ejercicio_id": press["id"], "peso": 100.0, "repeticiones": 5},
+        headers=headers_1,
+    )
+
+    rutina_2 = _crear_rutina(
+        client,
+        headers_2,
+        ejercicios=[
+            {"ejercicio_id": press["id"], "orden": 1, "series_objetivo": 4, "repeticiones_objetivo": 8}
+        ],
+    )
+
+    respuesta = client.post(f"/api/v1/rutinas/{rutina_2['id']}/iniciar", headers=headers_2)
+
+    assert respuesta.json()["ultimas_series"] == []
 
 
 def test_iniciar_rutina_de_otro_usuario(client: TestClient) -> None:

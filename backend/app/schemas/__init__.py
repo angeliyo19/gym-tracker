@@ -34,7 +34,11 @@ from app.schemas.rutina import (
     RutinaUpdate,
 )
 from app.schemas.serie import SerieCreate, SerieRead, SerieUpdate
-from app.schemas.sesion_entrenamiento import SesionEntrenamientoRead
+from app.schemas.sesion_entrenamiento import (
+    IniciarRutinaRead,
+    SesionEntrenamientoRead,
+    UltimaSerieRef,
+)
 from app.schemas.usuario import UsuarioRead, UsuarioUpdate
 
 __all__ = [
@@ -54,6 +58,8 @@ __all__ = [
     "RutinaEjercicioInput",
     "RutinaEjercicioRead",
     "SesionEntrenamientoRead",
+    "UltimaSerieRef",
+    "IniciarRutinaRead",
     "SerieCreate",
     "SerieUpdate",
     "SerieRead",

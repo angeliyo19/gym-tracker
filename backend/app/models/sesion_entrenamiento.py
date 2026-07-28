@@ -1,7 +1,7 @@
 from datetime import date
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import Boolean, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -20,6 +20,7 @@ class SesionEntrenamiento(Base):
     rutina_id: Mapped[int] = mapped_column(ForeignKey("rutinas.id"))
     fecha: Mapped[date]
     notas: Mapped[str | None] = mapped_column(String(500))
+    completada: Mapped[bool] = mapped_column(Boolean, default=False)
 
     usuario: Mapped["Usuario"] = relationship(back_populates="sesiones")
     rutina: Mapped["Rutina"] = relationship(back_populates="sesiones")

@@ -12,6 +12,7 @@ from app.routers.registros_estado_animo import router as registros_estado_animo_
 from app.routers.registros_peso import router as registros_peso_router
 from app.routers.rutinas import router as rutinas_router
 from app.routers.series import router as series_router
+from app.routers.sesiones import router as sesiones_router
 from app.routers.usuarios import router as usuarios_router
 
 app = FastAPI(title="Gym Tracker API")
@@ -30,6 +31,7 @@ app.include_router(ejercicios_router, prefix="/api/v1")
 app.include_router(grupos_musculares_router, prefix="/api/v1")
 app.include_router(rutinas_router, prefix="/api/v1")
 app.include_router(series_router, prefix="/api/v1")
+app.include_router(sesiones_router, prefix="/api/v1")
 app.include_router(comidas_router, prefix="/api/v1")
 app.include_router(planes_alimentacion_router, prefix="/api/v1")
 app.include_router(registros_alimentacion_router, prefix="/api/v1")

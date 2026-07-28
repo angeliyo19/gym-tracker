@@ -10,15 +10,17 @@ from app.models import (
     EjercicioGrupoMuscular,
     Rutina,
     RutinaEjercicio,
+    Serie,
     SesionEntrenamiento,
     Usuario,
 )
 from app.schemas import (
+    IniciarRutinaRead,
     RutinaCreate,
     RutinaEjercicioInput,
     RutinaRead,
     RutinaUpdate,
-    SesionEntrenamientoRead,
+    UltimaSerieRef,
 )
 from app.security import get_current_user
 
@@ -171,14 +173,29 @@ def eliminar_rutina(
         ) from exc
 
 
+def _ultima_serie_de_ejercicio(
+    db: Session, usuario_id: int, ejercicio_id: int
+) -> tuple[Serie, date] | None:
+    return (
+        db.query(Serie, SesionEntrenamiento.fecha)
+        .join(SesionEntrenamiento, Serie.sesion_id == SesionEntrenamiento.id)
+        .filter(
+            SesionEntrenamiento.usuario_id == usuario_id,
+            Serie.ejercicio_id == ejercicio_id,
+        )
+        .order_by(SesionEntrenamiento.fecha.desc(), Serie.id.desc())
+        .first()
+    )
+
+
 @router.post(
-    "/{rutina_id}/iniciar", response_model=SesionEntrenamientoRead, status_code=status.HTTP_201_CREATED
+    "/{rutina_id}/iniciar", response_model=IniciarRutinaRead, status_code=status.HTTP_201_CREATED
 )
 def iniciar_rutina(
     rutina_id: int,
     usuario_actual: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> SesionEntrenamiento:
+) -> IniciarRutinaRead:
     rutina = _get_rutina_or_404(db, rutina_id, usuario_actual.id)
 
     sesion = SesionEntrenamiento(
@@ -187,4 +204,28 @@ def iniciar_rutina(
     db.add(sesion)
     db.commit()
     db.refresh(sesion)
-    return sesion
+
+    ejercicio_ids = {asociacion.ejercicio_id for asociacion in rutina.ejercicios}
+    ultimas_series = []
+    for ejercicio_id in ejercicio_ids:
+        resultado = _ultima_serie_de_ejercicio(db, usuario_actual.id, ejercicio_id)
+        if resultado is not None:
+            serie, fecha = resultado
+            ultimas_series.append(
+                UltimaSerieRef(
+                    ejercicio_id=ejercicio_id,
+                    peso=serie.peso,
+                    repeticiones=serie.repeticiones,
+                    fecha=fecha,
+                )
+            )
+
+    return IniciarRutinaRead(
+        id=sesion.id,
+        usuario_id=sesion.usuario_id,
+        rutina_id=sesion.rutina_id,
+        fecha=sesion.fecha,
+        notas=sesion.notas,
+        completada=sesion.completada,
+        ultimas_series=ultimas_series,
+    )
