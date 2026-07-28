@@ -17,5 +17,7 @@ class Ejercicio(Base):
     nombre: Mapped[str] = mapped_column(String(100))
     tipo: Mapped[str] = mapped_column(String(20))
 
-    grupos_musculares: Mapped[list["EjercicioGrupoMuscular"]] = relationship(back_populates="ejercicio")
+    grupos_musculares: Mapped[list["EjercicioGrupoMuscular"]] = relationship(
+        back_populates="ejercicio", passive_deletes="all"
+    )
     series: Mapped[list["Serie"]] = relationship(back_populates="ejercicio")

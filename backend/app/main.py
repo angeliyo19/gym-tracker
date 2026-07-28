@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 
+from app.routers.ejercicios import router as ejercicios_router
+from app.routers.grupos_musculares import router as grupos_musculares_router
 from app.routers.usuarios import router as usuarios_router
 
 app = FastAPI(title="Gym Tracker API")
 
 app.include_router(usuarios_router, prefix="/api/v1")
+app.include_router(ejercicios_router, prefix="/api/v1")
+app.include_router(grupos_musculares_router, prefix="/api/v1")
 
 
 @app.get("/health")
