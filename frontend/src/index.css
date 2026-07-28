@@ -1,1 +1,53 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/* Modo oscuro controlado por una clase (.dark), no por prefers-color-scheme,
+   para poder alternarlo manualmente desde React. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --canvas: #faf8f5;
+  --surface: #ffffff;
+  --surface-hover: #f3efe8;
+  --ink: #1c1917;
+  --ink-muted: #78716c;
+  --border: #e8e3dc;
+  --accent: #ea5b32;
+  --accent-hover: #d14a24;
+  --accent-foreground: #fff8f3;
+}
+
+.dark {
+  --canvas: #15130f;
+  --surface: #201d18;
+  --surface-hover: #2a2620;
+  --ink: #f3eee7;
+  --ink-muted: #a89f96;
+  --border: #34302a;
+  --accent: #ff7a45;
+  --accent-hover: #ff8f5f;
+  --accent-foreground: #1b0d06;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --font-heading: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}

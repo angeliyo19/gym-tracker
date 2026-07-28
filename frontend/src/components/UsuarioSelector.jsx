@@ -21,27 +21,27 @@ export function UsuarioSelector({ usuarioId, onChange }) {
   }, [])
 
   if (cargando) {
-    return <p className="text-sm text-gray-500">Cargando usuarios...</p>
+    return <p className="text-sm text-ink-muted">Cargando usuarios...</p>
   }
 
   if (error) {
-    return <p className="text-sm text-red-700">Error al cargar usuarios: {error}</p>
+    return <p className="text-sm text-red-500">Error al cargar usuarios: {error}</p>
   }
 
   if (usuarios.length === 0) {
-    return <p className="text-sm text-gray-500">No hay usuarios todavía.</p>
+    return <p className="text-sm text-ink-muted">No hay usuarios todavía.</p>
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <label htmlFor="usuario-activo" className="text-sm font-medium text-gray-700">
+    <div className="flex items-center gap-3">
+      <label htmlFor="usuario-activo" className="text-sm font-medium text-ink-muted">
         Usuario activo
       </label>
       <select
         id="usuario-activo"
         value={usuarioId ?? ''}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+        className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent"
       >
         {usuarios.map((usuario) => (
           <option key={usuario.id} value={usuario.id}>

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { getEjercicios } from '../api/ejercicios'
 import { createRutina } from '../api/rutinas'
+import { Button } from './ui/Button'
+import { EmptyState } from './ui/EmptyState'
 
 function nuevaFila(ejercicios) {
   return {
@@ -10,6 +12,10 @@ function nuevaFila(ejercicios) {
     repeticiones_objetivo: 10,
   }
 }
+
+const CAMPO =
+  'rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink ' +
+  'focus:outline-none focus:ring-2 focus:ring-accent'
 
 export function RutinaForm({ usuarioId, onCreated, onCancel }) {
   const [ejercicios, setEjercicios] = useState([])
@@ -71,37 +77,46 @@ export function RutinaForm({ usuarioId, onCreated, onCancel }) {
   }
 
   if (cargandoCatalogo) {
-    return <p className="mt-6 text-gray-500">Cargando...</p>
+    return <p className="mt-6 text-ink-muted">Cargando...</p>
   }
 
   if (ejercicios.length === 0) {
     return (
-      <p className="mt-6 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800">
-        Hace falta al menos un ejercicio en el catálogo antes de crear una rutina.
-      </p>
+      <div className="mt-6">
+        <EmptyState
+          title="Falta un catálogo de ejercicios"
+          description="Hace falta al menos un ejercicio antes de poder crear una rutina."
+          action={
+            <Button variant="secondary" onClick={onCancel}>
+              Volver
+            </Button>
+          }
+        />
+      </div>
     )
   }
 
   return (
     <form onSubmit={manejarSubmit} className="mt-6 space-y-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700">Nombre</label>
+        <label className="mb-1.5 block text-sm font-medium text-ink-muted">Nombre</label>
         <input
           type="text"
           required
+          placeholder="Ej. Push day"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          className={`block w-full ${CAMPO}`}
         />
       </div>
 
       <div>
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-gray-700">Ejercicios</h2>
+          <h2 className="text-sm font-medium text-ink-muted">Ejercicios</h2>
           <button
             type="button"
             onClick={añadirFila}
-            className="text-sm font-medium text-gray-900 hover:underline"
+            className="text-sm font-medium text-accent hover:text-accent-hover"
           >
             + Añadir ejercicio
           </button>
@@ -111,12 +126,12 @@ export function RutinaForm({ usuarioId, onCreated, onCancel }) {
           {filas.map((fila, indice) => (
             <div
               key={indice}
-              className="grid grid-cols-12 gap-2 rounded-md border border-gray-200 p-3"
+              className="grid grid-cols-12 items-center gap-2 rounded-xl border border-border bg-surface p-3"
             >
               <select
                 value={fila.ejercicio_id}
                 onChange={(e) => actualizarFila(indice, 'ejercicio_id', e.target.value)}
-                className="col-span-5 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                className={`col-span-5 ${CAMPO} py-1.5`}
               >
                 {ejercicios.map((ejercicio) => (
                   <option key={ejercicio.id} value={ejercicio.id}>
@@ -131,7 +146,7 @@ export function RutinaForm({ usuarioId, onCreated, onCancel }) {
                 value={fila.orden}
                 onChange={(e) => actualizarFila(indice, 'orden', e.target.value)}
                 title="Orden"
-                className="col-span-2 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                className={`col-span-2 ${CAMPO} py-1.5`}
               />
               <input
                 type="number"
@@ -139,7 +154,7 @@ export function RutinaForm({ usuarioId, onCreated, onCancel }) {
                 value={fila.series_objetivo}
                 onChange={(e) => actualizarFila(indice, 'series_objetivo', e.target.value)}
                 title="Series objetivo"
-                className="col-span-2 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                className={`col-span-2 ${CAMPO} py-1.5`}
               />
               <input
                 type="number"
@@ -149,41 +164,33 @@ export function RutinaForm({ usuarioId, onCreated, onCancel }) {
                   actualizarFila(indice, 'repeticiones_objetivo', e.target.value)
                 }
                 title="Repeticiones objetivo"
-                className="col-span-2 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                className={`col-span-2 ${CAMPO} py-1.5`}
               />
 
               <button
                 type="button"
                 onClick={() => quitarFila(indice)}
-                className="col-span-1 text-sm text-red-600 hover:underline"
+                className="col-span-1 text-sm text-red-500 hover:text-red-400"
               >
                 Quitar
               </button>
             </div>
           ))}
         </div>
-        <p className="mt-1 text-xs text-gray-400">Orden / Series / Repeticiones objetivo</p>
+        <p className="mt-1.5 text-xs text-ink-muted">Orden / Series / Repeticiones objetivo</p>
       </div>
 
       {error && (
-        <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p>
+        <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-500">{error}</p>
       )}
 
       <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={enviando}
-          className="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-        >
+        <Button type="submit" variant="primary" disabled={enviando}>
           {enviando ? 'Guardando...' : 'Crear rutina'}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-md px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
-        >
+        </Button>
+        <Button type="button" variant="ghost" onClick={onCancel}>
           Cancelar
-        </button>
+        </Button>
       </div>
     </form>
   )
