@@ -65,4 +65,11 @@ def actualizar_usuario(
 def eliminar_usuario(usuario_id: int, db: Session = Depends(get_db)) -> None:
     usuario = _get_usuario_or_404(db, usuario_id)
     db.delete(usuario)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se puede eliminar: el usuario tiene rutinas o sesiones registradas",
+        ) from exc

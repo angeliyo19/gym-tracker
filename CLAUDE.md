@@ -35,19 +35,26 @@ gym-tracker/
 
 ## Modelo de datos (entidades principales)
 
-Jerarquía central: Usuario → Sesión → Serie → Ejercicio (catálogo).
-Una sesión NO tiene "ejercicios" directamente, tiene series realizadas; cada
-serie referencia un ejercicio del catálogo. Así una sesión puede tener varias
-series del mismo ejercicio con distinto peso/reps.
+Distinción clave: **Rutina** es una plantilla reutilizable (qué ejercicios, en
+qué orden, con qué objetivo de series/reps). **SesionEntrenamiento** es una
+ejecución real de esa rutina en una fecha concreta, con los pesos/reps reales
+registrados en sus Series (que pueden diferir del objetivo de la rutina). Toda
+sesión cuelga siempre de una rutina — si un día se quiere entrenar algo
+distinto a lo habitual, se crea una rutina nueva (aunque sea de un solo uso) y
+se inicia, no existen sesiones "sueltas" sin rutina.
 
-- **Usuario**: edad, peso, altura, sexo, objetivo (volumen/definición/mantenimiento)
+- **Usuario**: nombre, email (único), edad, peso, altura, sexo, objetivo (volumen/definición/mantenimiento)
 - **Ejercicio** (catálogo): nombre, tipo (compuesto/aislamiento)
 - **GrupoMuscular** (catálogo): nombre (pecho, espalda, pierna, hombro, bíceps, tríceps...)
 - **EjercicioGrupoMuscular** (tabla intermedia, relación muchos-a-muchos):
-  ejercicio_id, grupo_muscular_id, es_principal (bool, para distinguir músculo
-  principal vs secundario de ese ejercicio)
-- **SesionEntrenamiento**: fecha, usuario, notas
-- **Serie**: sesion_id, ejercicio_id, peso, repeticiones, RPE/RIR
+  ejercicio_id, grupo_muscular_id, es_principal (bool)
+- **Rutina** (plantilla reutilizable): usuario_id, nombre
+- **RutinaEjercicio** (qué ejercicios componen la rutina y su objetivo):
+  rutina_id, ejercicio_id, orden, series_objetivo, repeticiones_objetivo
+- **SesionEntrenamiento** (ejecución real de una rutina): usuario_id,
+  rutina_id (obligatorio), fecha, notas
+- **Serie** (lo realmente hecho en una sesión): sesion_id, ejercicio_id, peso,
+  repeticiones, RPE/RIR
 - **RegistroPeso**: usuario, fecha, peso, % grasa (opcional)
 - **RegistroAlimentacion**: usuario, fecha, comida, proteína, carbs, grasas, calorías
 - **RegistroEstadoAnimo**: usuario, fecha, valor (1-5), notas

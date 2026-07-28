@@ -7,6 +7,7 @@ from app.models.base import Base
 
 if TYPE_CHECKING:
     from app.models.ejercicio_grupo_muscular import EjercicioGrupoMuscular
+    from app.models.rutina_ejercicio import RutinaEjercicio
     from app.models.serie import Serie
 
 
@@ -21,3 +22,6 @@ class Ejercicio(Base):
         back_populates="ejercicio", passive_deletes="all"
     )
     series: Mapped[list["Serie"]] = relationship(back_populates="ejercicio")
+    rutina_ejercicios: Mapped[list["RutinaEjercicio"]] = relationship(
+        back_populates="ejercicio", passive_deletes="all"
+    )

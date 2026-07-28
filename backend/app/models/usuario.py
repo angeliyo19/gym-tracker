@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
 
 if TYPE_CHECKING:
+    from app.models.rutina import Rutina
     from app.models.sesion_entrenamiento import SesionEntrenamiento
 
 
@@ -22,3 +23,4 @@ class Usuario(Base):
     objetivo: Mapped[str] = mapped_column(String(20))
 
     sesiones: Mapped[list["SesionEntrenamiento"]] = relationship(back_populates="usuario")
+    rutinas: Mapped[list["Rutina"]] = relationship(back_populates="usuario", passive_deletes="all")
