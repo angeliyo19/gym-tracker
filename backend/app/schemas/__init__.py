@@ -1,3 +1,4 @@
+from app.schemas.comida import ComidaCreate, ComidaRead, ComidaUpdate
 from app.schemas.ejercicio import (
     EjercicioCreate,
     EjercicioGrupoMuscularInput,
@@ -6,6 +7,18 @@ from app.schemas.ejercicio import (
     EjercicioUpdate,
 )
 from app.schemas.grupo_muscular import GrupoMuscularCreate, GrupoMuscularRead, GrupoMuscularUpdate
+from app.schemas.plan_alimentacion import (
+    PlanAlimentacionCreate,
+    PlanAlimentacionRead,
+    PlanAlimentacionUpdate,
+    PlanDiaInput,
+    PlanDiaRead,
+)
+from app.schemas.registro_alimentacion import (
+    RegistroAlimentacionCreate,
+    RegistroAlimentacionRead,
+    RegistroAlimentacionUpdate,
+)
 from app.schemas.rutina import (
     RutinaCreate,
     RutinaEjercicioInput,
@@ -38,4 +51,15 @@ __all__ = [
     "SerieCreate",
     "SerieUpdate",
     "SerieRead",
+    "ComidaCreate",
+    "ComidaUpdate",
+    "ComidaRead",
+    "PlanAlimentacionCreate",
+    "PlanAlimentacionUpdate",
+    "PlanAlimentacionRead",
+    "PlanDiaInput",
+    "PlanDiaRead",
+    "RegistroAlimentacionCreate",
+    "RegistroAlimentacionUpdate",
+    "RegistroAlimentacionRead",
 ]

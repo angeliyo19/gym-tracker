@@ -56,7 +56,18 @@ se inicia, no existen sesiones "sueltas" sin rutina.
 - **Serie** (lo realmente hecho en una sesión): sesion_id, ejercicio_id, peso,
   repeticiones, RPE/RIR
 - **RegistroPeso**: usuario, fecha, peso, % grasa (opcional)
-- **RegistroAlimentacion**: usuario, fecha, comida, proteína, carbs, grasas, calorías
+
+Alimentación — mismo patrón plantilla/ejecución que Rutina/Sesión:
+- **Comida** (catálogo reutilizable, como Ejercicio): usuario_id, nombre/descripción, calorías (opcional)
+- **PlanAlimentacion** (plantilla reutilizable, como Rutina): usuario_id, nombre
+- **PlanDia** (qué comidas van en qué franja de qué día del ciclo, como RutinaEjercicio):
+  plan_id, numero_dia, franja (desayuno/media_mañana/almuerzo/merienda/cena — valores
+  fijos conocidos, validados en Pydantic, no en la BD), comida_id, orden. No todas las
+  franjas son obligatorias cada día (un usuario puede no usar "media mañana")
+- **RegistroAlimentacion** (registro real diario, como Serie): usuario_id, fecha,
+  plan_dia_id (opcional, de qué día/franja del plan viene), comida_id (lo realmente
+  comido, puede diferir de lo planeado), completada (bool), calorías (valor real)
+
 - **RegistroEstadoAnimo**: usuario, fecha, valor (1-5), notas
 
 Nota de diseño: qué grupos musculares trabaja una sesión NO se guarda como
@@ -68,6 +79,15 @@ para evitar que el dato quede desactualizado si cambian los ejercicios.
 2. **Consolidación**: cálculo de 1RM estimado, volumen semanal, macros vs objetivo, etapas (volumen/definición)
 3. **Predicción**: modelos de regresión sobre el histórico para predecir progresión de peso/reps
 4. **Análisis de vídeo**: pose estimation (MediaPipe/OpenCV) para evaluar técnica
+
+Nota de producto importante: **Entrenamiento y Alimentación son secciones
+independientes** en la aplicación (navegación separada, no mezcladas en una
+misma pantalla), aunque comparten el mismo Usuario. Los registros personales
+(RegistroPeso, RegistroEstadoAnimo, RegistroAlimentacion) existen sobre todo
+como **datos de entrada para la Fase 3 (predicción por IA)**: el objetivo final
+es analizar la progresión real del usuario (peso, ánimo, alimentación,
+rendimiento en el gym) para dar consejos útiles y guiarlo en su proceso, no
+solo para mostrar gráficas históricas.
 
 ## Principios de diseño para que el proyecto escale bien
 El proyecto se construye por fases, así que cada pieza debe montarse pensando
