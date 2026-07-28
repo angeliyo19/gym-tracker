@@ -9,6 +9,8 @@ if TYPE_CHECKING:
     from app.models.comida import Comida
     from app.models.plan_alimentacion import PlanAlimentacion
     from app.models.registro_alimentacion import RegistroAlimentacion
+    from app.models.registro_estado_animo import RegistroEstadoAnimo
+    from app.models.registro_peso import RegistroPeso
     from app.models.rutina import Rutina
     from app.models.sesion_entrenamiento import SesionEntrenamiento
 
@@ -32,5 +34,11 @@ class Usuario(Base):
         back_populates="usuario", passive_deletes="all"
     )
     registros_alimentacion: Mapped[list["RegistroAlimentacion"]] = relationship(
+        back_populates="usuario", passive_deletes="all"
+    )
+    registros_peso: Mapped[list["RegistroPeso"]] = relationship(
+        back_populates="usuario", passive_deletes="all"
+    )
+    registros_estado_animo: Mapped[list["RegistroEstadoAnimo"]] = relationship(
         back_populates="usuario", passive_deletes="all"
     )

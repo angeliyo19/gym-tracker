@@ -6,6 +6,8 @@ from app.models.grupo_muscular import GrupoMuscular
 from app.models.plan_alimentacion import PlanAlimentacion
 from app.models.plan_dia import PlanDia
 from app.models.registro_alimentacion import RegistroAlimentacion
+from app.models.registro_estado_animo import RegistroEstadoAnimo
+from app.models.registro_peso import RegistroPeso
 from app.models.rutina import Rutina
 from app.models.rutina_ejercicio import RutinaEjercicio
 from app.models.serie import Serie
@@ -26,4 +28,6 @@ __all__ = [
     "PlanAlimentacion",
     "PlanDia",
     "RegistroAlimentacion",
+    "RegistroPeso",
+    "RegistroEstadoAnimo",
 ]

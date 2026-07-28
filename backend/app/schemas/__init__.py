@@ -19,6 +19,12 @@ from app.schemas.registro_alimentacion import (
     RegistroAlimentacionRead,
     RegistroAlimentacionUpdate,
 )
+from app.schemas.registro_estado_animo import (
+    RegistroEstadoAnimoCreate,
+    RegistroEstadoAnimoRead,
+    RegistroEstadoAnimoUpdate,
+)
+from app.schemas.registro_peso import RegistroPesoCreate, RegistroPesoRead, RegistroPesoUpdate
 from app.schemas.rutina import (
     RutinaCreate,
     RutinaEjercicioInput,
@@ -62,4 +68,10 @@ __all__ = [
     "RegistroAlimentacionCreate",
     "RegistroAlimentacionUpdate",
     "RegistroAlimentacionRead",
+    "RegistroPesoCreate",
+    "RegistroPesoUpdate",
+    "RegistroPesoRead",
+    "RegistroEstadoAnimoCreate",
+    "RegistroEstadoAnimoUpdate",
+    "RegistroEstadoAnimoRead",
 ]
