@@ -1,5 +1,7 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import settings
 from app.routers.ejercicios import router as ejercicios_router
 from app.routers.grupos_musculares import router as grupos_musculares_router
 from app.routers.rutinas import router as rutinas_router
@@ -7,6 +9,14 @@ from app.routers.series import router as series_router
 from app.routers.usuarios import router as usuarios_router
 
 app = FastAPI(title="Gym Tracker API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(usuarios_router, prefix="/api/v1")
 app.include_router(ejercicios_router, prefix="/api/v1")
