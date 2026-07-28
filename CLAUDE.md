@@ -77,7 +77,17 @@ para evitar que el dato quede desactualizado si cambian los ejercicios.
 ## Fases del proyecto
 1. **MVP**: CRUD de usuarios, ejercicios, sesiones/series y alimentación + gráficas básicas de progresión
 2. **Consolidación**: cálculo de 1RM estimado, volumen semanal, macros vs objetivo, etapas (volumen/definición)
-3. **Predicción**: modelos de regresión sobre el histórico para predecir progresión de peso/reps
+3. **Predicción**: modelos de regresión sobre el histórico para predecir progresión de peso/reps.
+   Fuentes de datos combinadas para el modelo (todas ya cruzables por `fecha` + `usuario_id`,
+   no requieren tablas nuevas):
+   - Progresión histórica de peso/repeticiones por ejercicio (Serie + SesionEntrenamiento.fecha)
+   - Estado de ánimo del día de la sesión (RegistroEstadoAnimo), como proxy de disposición/motivación
+   - Alimentación de una ventana de los últimos 1-2 días previos a la sesión (RegistroAlimentacion),
+     no solo el mismo día — los depósitos de glucógeno se rellenan con la ingesta de días previos,
+     no con la comida de esa misma mañana
+   - Composición corporal reciente (RegistroPeso) y etapa del usuario (Usuario.objetivo:
+     volumen/definición/mantenimiento), como contexto de fondo para no confundir una bajada de
+     fuerza normal en definición con una señal de alarma
 4. **Análisis de vídeo**: pose estimation (MediaPipe/OpenCV) para evaluar técnica
 
 Nota de producto importante: **Entrenamiento y Alimentación son secciones

@@ -27,7 +27,7 @@ def test_crear_registro_con_porcentaje_grasa(client: TestClient) -> None:
     assert cuerpo["usuario_id"] == usuario["id"]
 
 
-def test_crear_registro_sin_porcentaje_grasa(client: TestClient) -> None:
+def test_crear_registro_sin_campos_opcionales(client: TestClient) -> None:
     _, headers = crear_usuario_autenticado(client)
 
     respuesta = client.post(
@@ -37,7 +37,69 @@ def test_crear_registro_sin_porcentaje_grasa(client: TestClient) -> None:
     )
 
     assert respuesta.status_code == 201
-    assert respuesta.json()["porcentaje_grasa"] is None
+    cuerpo = respuesta.json()
+    assert cuerpo["porcentaje_grasa"] is None
+    assert cuerpo["masa_muscular_kg"] is None
+    assert cuerpo["detalle_medidas"] is None
+
+
+def test_crear_registro_con_masa_muscular(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+
+    respuesta = client.post(
+        "/api/v1/registros-peso/",
+        json={"fecha": "2026-07-28", "peso": 76.2, "masa_muscular_kg": 34.8},
+        headers=headers,
+    )
+
+    assert respuesta.status_code == 201
+    assert respuesta.json()["masa_muscular_kg"] == 34.8
+
+
+def test_crear_registro_con_detalle_medidas(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    detalle = {
+        "circunferencias_cm": {"cintura": 82.5, "cadera": 98, "brazo": 34},
+        "sumatorio_pliegues_mm": 62,
+        "composicion_por_zona": {"tronco_pct_grasa": 20.1, "piernas_pct_grasa": 15.4},
+    }
+
+    respuesta = client.post(
+        "/api/v1/registros-peso/",
+        json={"fecha": "2026-07-28", "peso": 76.2, "detalle_medidas": detalle},
+        headers=headers,
+    )
+
+    assert respuesta.status_code == 201
+    assert respuesta.json()["detalle_medidas"] == detalle
+
+
+def test_obtener_registro_con_detalle_medidas(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    detalle = {"circunferencias_cm": {"cintura": 82.5}}
+    creado = _crear_registro(client, headers, detalle_medidas=detalle)
+
+    respuesta = client.get(f"/api/v1/registros-peso/{creado['id']}", headers=headers)
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["detalle_medidas"] == detalle
+
+
+def test_actualizar_registro_detalle_medidas(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    creado = _crear_registro(client, headers, detalle_medidas={"cintura": 82.5})
+
+    nuevo_detalle = {"cintura": 81.0, "cadera": 97.0}
+    respuesta = client.patch(
+        f"/api/v1/registros-peso/{creado['id']}",
+        json={"detalle_medidas": nuevo_detalle},
+        headers=headers,
+    )
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert cuerpo["detalle_medidas"] == nuevo_detalle
+    assert cuerpo["peso"] == creado["peso"]
 
 
 def test_crear_registro_sin_token(client: TestClient) -> None:
