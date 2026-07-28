@@ -24,7 +24,6 @@ class RutinaBase(BaseModel):
 
 
 class RutinaCreate(RutinaBase):
-    usuario_id: int
     ejercicios: list[RutinaEjercicioInput] = []
 
 

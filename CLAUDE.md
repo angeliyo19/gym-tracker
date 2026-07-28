@@ -113,6 +113,20 @@ en que se ampliará después, sin necesidad de reescribirla:
 - **Tests desde el principio**: cada endpoint nuevo con su test, para poder
   refactorizar con confianza cuando el proyecto crezca.
 
+## Autenticación
+- **Mecanismo**: JWT (Bearer token), vía `OAuth2PasswordBearer` de FastAPI.
+  Sin refresh tokens por ahora — token de acceso único con expiración razonable.
+- **Contraseñas**: hasheadas (nunca en texto plano) — campo `password_hash` en Usuario.
+- **Frontend**: el token se guarda en `localStorage` (simple, sobrevive a recargar
+  la página). Aceptado conscientemente el trade-off de seguridad frente a un
+  cookie `httpOnly` — revisar si el proyecto llega a producción real con
+  usuarios externos.
+- **Endpoints existentes que reciben `usuario_id` como dato de entrada**
+  (Rutina, SesionEntrenamiento, RegistroPeso, RegistroEstadoAnimo,
+  RegistroAlimentacion, PlanAlimentacion) deben pasar a derivar el usuario del
+  token autenticado (`Depends(get_current_user)`), no confiar en lo que envíe
+  el cliente.
+
 ## Convenciones de código
 - Python: seguir PEP8, type hints siempre, docstrings en funciones públicas
 - Nombres de tablas/columnas en snake_case, en español (coherente con el dominio)

@@ -9,12 +9,17 @@ from app.schemas import (
     RegistroEstadoAnimoRead,
     RegistroEstadoAnimoUpdate,
 )
+from app.security import get_current_user
 
 router = APIRouter(prefix="/registros-estado-animo", tags=["registros-estado-animo"])
 
 
-def _get_registro_or_404(db: Session, registro_id: int) -> RegistroEstadoAnimo:
-    registro = db.get(RegistroEstadoAnimo, registro_id)
+def _get_registro_or_404(db: Session, registro_id: int, usuario_id: int) -> RegistroEstadoAnimo:
+    registro = (
+        db.query(RegistroEstadoAnimo)
+        .filter(RegistroEstadoAnimo.id == registro_id, RegistroEstadoAnimo.usuario_id == usuario_id)
+        .first()
+    )
     if registro is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Registro de estado de ánimo no encontrado"
@@ -22,18 +27,13 @@ def _get_registro_or_404(db: Session, registro_id: int) -> RegistroEstadoAnimo:
     return registro
 
 
-def _validar_usuario(db: Session, usuario_id: int) -> None:
-    if db.get(Usuario, usuario_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
-
-
 @router.post("/", response_model=RegistroEstadoAnimoRead, status_code=status.HTTP_201_CREATED)
 def crear_registro(
-    registro_in: RegistroEstadoAnimoCreate, db: Session = Depends(get_db)
+    registro_in: RegistroEstadoAnimoCreate,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> RegistroEstadoAnimo:
-    _validar_usuario(db, registro_in.usuario_id)
-
-    registro = RegistroEstadoAnimo(**registro_in.model_dump())
+    registro = RegistroEstadoAnimo(**registro_in.model_dump(), usuario_id=usuario_actual.id)
     db.add(registro)
     try:
         db.commit()
@@ -49,21 +49,37 @@ def crear_registro(
 
 @router.get("/", response_model=list[RegistroEstadoAnimoRead])
 def listar_registros(
-    skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
+    skip: int = 0,
+    limit: int = 100,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> list[RegistroEstadoAnimo]:
-    return db.query(RegistroEstadoAnimo).offset(skip).limit(limit).all()
+    return (
+        db.query(RegistroEstadoAnimo)
+        .filter(RegistroEstadoAnimo.usuario_id == usuario_actual.id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
 @router.get("/{registro_id}", response_model=RegistroEstadoAnimoRead)
-def obtener_registro(registro_id: int, db: Session = Depends(get_db)) -> RegistroEstadoAnimo:
-    return _get_registro_or_404(db, registro_id)
+def obtener_registro(
+    registro_id: int,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> RegistroEstadoAnimo:
+    return _get_registro_or_404(db, registro_id, usuario_actual.id)
 
 
 @router.patch("/{registro_id}", response_model=RegistroEstadoAnimoRead)
 def actualizar_registro(
-    registro_id: int, registro_in: RegistroEstadoAnimoUpdate, db: Session = Depends(get_db)
+    registro_id: int,
+    registro_in: RegistroEstadoAnimoUpdate,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> RegistroEstadoAnimo:
-    registro = _get_registro_or_404(db, registro_id)
+    registro = _get_registro_or_404(db, registro_id, usuario_actual.id)
     for campo, valor in registro_in.model_dump(exclude_unset=True).items():
         setattr(registro, campo, valor)
     try:
@@ -79,7 +95,11 @@ def actualizar_registro(
 
 
 @router.delete("/{registro_id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_registro(registro_id: int, db: Session = Depends(get_db)) -> None:
-    registro = _get_registro_or_404(db, registro_id)
+def eliminar_registro(
+    registro_id: int,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    registro = _get_registro_or_404(db, registro_id, usuario_actual.id)
     db.delete(registro)
     db.commit()

@@ -1,24 +1,6 @@
-import itertools
-
 from fastapi.testclient import TestClient
 
-USUARIO_EJEMPLO = {
-    "nombre": "Angel",
-    "edad": 25,
-    "peso": 75.5,
-    "altura": 1.78,
-    "sexo": "masculino",
-    "objetivo": "volumen",
-}
-
-_contador_email = itertools.count(1)
-
-
-def _crear_usuario(client: TestClient) -> dict:
-    email = f"angel{next(_contador_email)}@example.com"
-    respuesta = client.post("/api/v1/usuarios/", json={**USUARIO_EJEMPLO, "email": email})
-    assert respuesta.status_code == 201
-    return respuesta.json()
+from tests.conftest import crear_usuario_autenticado
 
 
 def _crear_ejercicio(client: TestClient, nombre: str = "Press banca") -> dict:
@@ -29,34 +11,39 @@ def _crear_ejercicio(client: TestClient, nombre: str = "Press banca") -> dict:
     return respuesta.json()
 
 
-def _crear_sesion(client: TestClient) -> dict:
-    usuario = _crear_usuario(client)
+def _crear_sesion(client: TestClient) -> tuple[dict, dict]:
+    _, headers = crear_usuario_autenticado(client)
     respuesta_rutina = client.post(
-        "/api/v1/rutinas/", json={"nombre": "Push day", "usuario_id": usuario["id"], "ejercicios": []}
+        "/api/v1/rutinas/", json={"nombre": "Push day", "ejercicios": []}, headers=headers
     )
     assert respuesta_rutina.status_code == 201
     rutina = respuesta_rutina.json()
 
-    respuesta_sesion = client.post(f"/api/v1/rutinas/{rutina['id']}/iniciar")
+    respuesta_sesion = client.post(f"/api/v1/rutinas/{rutina['id']}/iniciar", headers=headers)
     assert respuesta_sesion.status_code == 201
-    return respuesta_sesion.json()
+    return respuesta_sesion.json(), headers
 
 
-def _crear_serie(client: TestClient, sesion_id: int, ejercicio_id: int, **overrides) -> dict:
+def _crear_serie(
+    client: TestClient, sesion_id: int, ejercicio_id: int, headers: dict, **overrides
+) -> dict:
     payload = {"ejercicio_id": ejercicio_id, "peso": 80.0, "repeticiones": 8, "rpe": 8.5, "rir": 1.0}
     payload.update(overrides)
-    respuesta = client.post(f"/api/v1/sesiones/{sesion_id}/series/", json=payload)
+    respuesta = client.post(
+        f"/api/v1/sesiones/{sesion_id}/series/", json=payload, headers=headers
+    )
     assert respuesta.status_code == 201
     return respuesta.json()
 
 
 def test_crear_serie(client: TestClient) -> None:
-    sesion = _crear_sesion(client)
+    sesion, headers = _crear_sesion(client)
     ejercicio = _crear_ejercicio(client)
 
     respuesta = client.post(
         f"/api/v1/sesiones/{sesion['id']}/series/",
         json={"ejercicio_id": ejercicio["id"], "peso": 80.0, "repeticiones": 8, "rpe": 8.5, "rir": 1.0},
+        headers=headers,
     )
 
     assert respuesta.status_code == 201
@@ -67,35 +54,64 @@ def test_crear_serie(client: TestClient) -> None:
     assert cuerpo["repeticiones"] == 8
 
 
+def test_crear_serie_sin_token(client: TestClient) -> None:
+    sesion, _ = _crear_sesion(client)
+    ejercicio = _crear_ejercicio(client)
+
+    respuesta = client.post(
+        f"/api/v1/sesiones/{sesion['id']}/series/",
+        json={"ejercicio_id": ejercicio["id"], "peso": 80.0, "repeticiones": 8},
+    )
+
+    assert respuesta.status_code == 401
+
+
 def test_crear_serie_sesion_inexistente(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
     ejercicio = _crear_ejercicio(client)
 
     respuesta = client.post(
         "/api/v1/sesiones/999999/series/",
         json={"ejercicio_id": ejercicio["id"], "peso": 80.0, "repeticiones": 8},
+        headers=headers,
+    )
+
+    assert respuesta.status_code == 404
+
+
+def test_crear_serie_sesion_de_otro_usuario(client: TestClient) -> None:
+    sesion, _ = _crear_sesion(client)
+    _, headers_2 = crear_usuario_autenticado(client)
+    ejercicio = _crear_ejercicio(client)
+
+    respuesta = client.post(
+        f"/api/v1/sesiones/{sesion['id']}/series/",
+        json={"ejercicio_id": ejercicio["id"], "peso": 80.0, "repeticiones": 8},
+        headers=headers_2,
     )
 
     assert respuesta.status_code == 404
 
 
 def test_crear_serie_ejercicio_inexistente(client: TestClient) -> None:
-    sesion = _crear_sesion(client)
+    sesion, headers = _crear_sesion(client)
 
     respuesta = client.post(
         f"/api/v1/sesiones/{sesion['id']}/series/",
         json={"ejercicio_id": 999999, "peso": 80.0, "repeticiones": 8},
+        headers=headers,
     )
 
     assert respuesta.status_code == 404
 
 
 def test_listar_series(client: TestClient) -> None:
-    sesion = _crear_sesion(client)
+    sesion, headers = _crear_sesion(client)
     ejercicio = _crear_ejercicio(client)
-    _crear_serie(client, sesion["id"], ejercicio["id"], peso=80.0)
-    _crear_serie(client, sesion["id"], ejercicio["id"], peso=85.0)
+    _crear_serie(client, sesion["id"], ejercicio["id"], headers, peso=80.0)
+    _crear_serie(client, sesion["id"], ejercicio["id"], headers, peso=85.0)
 
-    respuesta = client.get(f"/api/v1/sesiones/{sesion['id']}/series/")
+    respuesta = client.get(f"/api/v1/sesiones/{sesion['id']}/series/", headers=headers)
 
     assert respuesta.status_code == 200
     pesos = {serie["peso"] for serie in respuesta.json()}
@@ -103,48 +119,67 @@ def test_listar_series(client: TestClient) -> None:
 
 
 def test_listar_series_sesion_inexistente(client: TestClient) -> None:
-    respuesta = client.get("/api/v1/sesiones/999999/series/")
+    _, headers = crear_usuario_autenticado(client)
+
+    respuesta = client.get("/api/v1/sesiones/999999/series/", headers=headers)
+
+    assert respuesta.status_code == 404
+
+
+def test_listar_series_sesion_de_otro_usuario(client: TestClient) -> None:
+    sesion, headers = _crear_sesion(client)
+    ejercicio = _crear_ejercicio(client)
+    _crear_serie(client, sesion["id"], ejercicio["id"], headers)
+    _, headers_2 = crear_usuario_autenticado(client)
+
+    respuesta = client.get(f"/api/v1/sesiones/{sesion['id']}/series/", headers=headers_2)
 
     assert respuesta.status_code == 404
 
 
 def test_obtener_serie_por_id(client: TestClient) -> None:
-    sesion = _crear_sesion(client)
+    sesion, headers = _crear_sesion(client)
     ejercicio = _crear_ejercicio(client)
-    creada = _crear_serie(client, sesion["id"], ejercicio["id"])
+    creada = _crear_serie(client, sesion["id"], ejercicio["id"], headers)
 
-    respuesta = client.get(f"/api/v1/sesiones/{sesion['id']}/series/{creada['id']}")
+    respuesta = client.get(
+        f"/api/v1/sesiones/{sesion['id']}/series/{creada['id']}", headers=headers
+    )
 
     assert respuesta.status_code == 200
     assert respuesta.json() == creada
 
 
 def test_obtener_serie_inexistente(client: TestClient) -> None:
-    sesion = _crear_sesion(client)
+    sesion, headers = _crear_sesion(client)
 
-    respuesta = client.get(f"/api/v1/sesiones/{sesion['id']}/series/999999")
+    respuesta = client.get(f"/api/v1/sesiones/{sesion['id']}/series/999999", headers=headers)
 
     assert respuesta.status_code == 404
 
 
 def test_obtener_serie_de_otra_sesion(client: TestClient) -> None:
-    sesion_1 = _crear_sesion(client)
-    sesion_2 = _crear_sesion(client)
+    sesion_1, headers_1 = _crear_sesion(client)
+    sesion_2, headers_2 = _crear_sesion(client)
     ejercicio = _crear_ejercicio(client)
-    creada = _crear_serie(client, sesion_1["id"], ejercicio["id"])
+    creada = _crear_serie(client, sesion_1["id"], ejercicio["id"], headers_1)
 
-    respuesta = client.get(f"/api/v1/sesiones/{sesion_2['id']}/series/{creada['id']}")
+    respuesta = client.get(
+        f"/api/v1/sesiones/{sesion_2['id']}/series/{creada['id']}", headers=headers_2
+    )
 
     assert respuesta.status_code == 404
 
 
 def test_actualizar_serie_parcial(client: TestClient) -> None:
-    sesion = _crear_sesion(client)
+    sesion, headers = _crear_sesion(client)
     ejercicio = _crear_ejercicio(client)
-    creada = _crear_serie(client, sesion["id"], ejercicio["id"], peso=80.0)
+    creada = _crear_serie(client, sesion["id"], ejercicio["id"], headers, peso=80.0)
 
     respuesta = client.patch(
-        f"/api/v1/sesiones/{sesion['id']}/series/{creada['id']}", json={"peso": 85.0}
+        f"/api/v1/sesiones/{sesion['id']}/series/{creada['id']}",
+        json={"peso": 85.0},
+        headers=headers,
     )
 
     assert respuesta.status_code == 200
@@ -154,24 +189,43 @@ def test_actualizar_serie_parcial(client: TestClient) -> None:
 
 
 def test_actualizar_serie_ejercicio_inexistente(client: TestClient) -> None:
-    sesion = _crear_sesion(client)
+    sesion, headers = _crear_sesion(client)
     ejercicio = _crear_ejercicio(client)
-    creada = _crear_serie(client, sesion["id"], ejercicio["id"])
+    creada = _crear_serie(client, sesion["id"], ejercicio["id"], headers)
 
     respuesta = client.patch(
-        f"/api/v1/sesiones/{sesion['id']}/series/{creada['id']}", json={"ejercicio_id": 999999}
+        f"/api/v1/sesiones/{sesion['id']}/series/{creada['id']}",
+        json={"ejercicio_id": 999999},
+        headers=headers,
     )
 
     assert respuesta.status_code == 404
 
 
 def test_eliminar_serie(client: TestClient) -> None:
-    sesion = _crear_sesion(client)
+    sesion, headers = _crear_sesion(client)
     ejercicio = _crear_ejercicio(client)
-    creada = _crear_serie(client, sesion["id"], ejercicio["id"])
+    creada = _crear_serie(client, sesion["id"], ejercicio["id"], headers)
 
-    respuesta_delete = client.delete(f"/api/v1/sesiones/{sesion['id']}/series/{creada['id']}")
+    respuesta_delete = client.delete(
+        f"/api/v1/sesiones/{sesion['id']}/series/{creada['id']}", headers=headers
+    )
     assert respuesta_delete.status_code == 204
 
-    respuesta_get = client.get(f"/api/v1/sesiones/{sesion['id']}/series/{creada['id']}")
+    respuesta_get = client.get(
+        f"/api/v1/sesiones/{sesion['id']}/series/{creada['id']}", headers=headers
+    )
     assert respuesta_get.status_code == 404
+
+
+def test_eliminar_serie_de_otra_sesion(client: TestClient) -> None:
+    sesion, headers = _crear_sesion(client)
+    ejercicio = _crear_ejercicio(client)
+    creada = _crear_serie(client, sesion["id"], ejercicio["id"], headers)
+    _, headers_2 = crear_usuario_autenticado(client)
+
+    respuesta = client.delete(
+        f"/api/v1/sesiones/{sesion['id']}/series/{creada['id']}", headers=headers_2
+    )
+
+    assert respuesta.status_code == 404

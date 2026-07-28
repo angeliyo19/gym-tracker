@@ -3,14 +3,19 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models import Ejercicio, SesionEntrenamiento, Serie
+from app.models import Ejercicio, SesionEntrenamiento, Serie, Usuario
 from app.schemas import SerieCreate, SerieRead, SerieUpdate
+from app.security import get_current_user
 
 router = APIRouter(prefix="/sesiones/{sesion_id}/series", tags=["series"])
 
 
-def _get_sesion_or_404(db: Session, sesion_id: int) -> SesionEntrenamiento:
-    sesion = db.get(SesionEntrenamiento, sesion_id)
+def _get_sesion_or_404(db: Session, sesion_id: int, usuario_id: int) -> SesionEntrenamiento:
+    sesion = (
+        db.query(SesionEntrenamiento)
+        .filter(SesionEntrenamiento.id == sesion_id, SesionEntrenamiento.usuario_id == usuario_id)
+        .first()
+    )
     if sesion is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Sesión de entrenamiento no encontrada"
@@ -35,8 +40,13 @@ def _get_serie_or_404(db: Session, sesion_id: int, serie_id: int) -> Serie:
 
 
 @router.post("/", response_model=SerieRead, status_code=status.HTTP_201_CREATED)
-def crear_serie(sesion_id: int, serie_in: SerieCreate, db: Session = Depends(get_db)) -> Serie:
-    _get_sesion_or_404(db, sesion_id)
+def crear_serie(
+    sesion_id: int,
+    serie_in: SerieCreate,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Serie:
+    _get_sesion_or_404(db, sesion_id, usuario_actual.id)
     _validar_ejercicio(db, serie_in.ejercicio_id)
 
     serie = Serie(sesion_id=sesion_id, **serie_in.model_dump())
@@ -55,9 +65,13 @@ def crear_serie(sesion_id: int, serie_in: SerieCreate, db: Session = Depends(get
 
 @router.get("/", response_model=list[SerieRead])
 def listar_series(
-    sesion_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
+    sesion_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> list[Serie]:
-    _get_sesion_or_404(db, sesion_id)
+    _get_sesion_or_404(db, sesion_id, usuario_actual.id)
     return (
         db.query(Serie)
         .filter(Serie.sesion_id == sesion_id)
@@ -68,16 +82,25 @@ def listar_series(
 
 
 @router.get("/{serie_id}", response_model=SerieRead)
-def obtener_serie(sesion_id: int, serie_id: int, db: Session = Depends(get_db)) -> Serie:
-    _get_sesion_or_404(db, sesion_id)
+def obtener_serie(
+    sesion_id: int,
+    serie_id: int,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Serie:
+    _get_sesion_or_404(db, sesion_id, usuario_actual.id)
     return _get_serie_or_404(db, sesion_id, serie_id)
 
 
 @router.patch("/{serie_id}", response_model=SerieRead)
 def actualizar_serie(
-    sesion_id: int, serie_id: int, serie_in: SerieUpdate, db: Session = Depends(get_db)
+    sesion_id: int,
+    serie_id: int,
+    serie_in: SerieUpdate,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> Serie:
-    _get_sesion_or_404(db, sesion_id)
+    _get_sesion_or_404(db, sesion_id, usuario_actual.id)
     serie = _get_serie_or_404(db, sesion_id, serie_id)
 
     datos = serie_in.model_dump(exclude_unset=True)
@@ -99,8 +122,13 @@ def actualizar_serie(
 
 
 @router.delete("/{serie_id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_serie(sesion_id: int, serie_id: int, db: Session = Depends(get_db)) -> None:
-    _get_sesion_or_404(db, sesion_id)
+def eliminar_serie(
+    sesion_id: int,
+    serie_id: int,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    _get_sesion_or_404(db, sesion_id, usuario_actual.id)
     serie = _get_serie_or_404(db, sesion_id, serie_id)
     db.delete(serie)
     db.commit()

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.routers.auth import router as auth_router
 from app.routers.comidas import router as comidas_router
 from app.routers.ejercicios import router as ejercicios_router
 from app.routers.grupos_musculares import router as grupos_musculares_router
@@ -23,6 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router, prefix="/api/v1")
 app.include_router(usuarios_router, prefix="/api/v1")
 app.include_router(ejercicios_router, prefix="/api/v1")
 app.include_router(grupos_musculares_router, prefix="/api/v1")

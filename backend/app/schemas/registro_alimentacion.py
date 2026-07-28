@@ -12,7 +12,7 @@ class RegistroAlimentacionBase(BaseModel):
 
 
 class RegistroAlimentacionCreate(RegistroAlimentacionBase):
-    usuario_id: int
+    pass
 
 
 class RegistroAlimentacionUpdate(BaseModel):

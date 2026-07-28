@@ -1,87 +1,38 @@
 from fastapi.testclient import TestClient
 
-USUARIO_EJEMPLO = {
-    "nombre": "Angel",
-    "email": "angel@example.com",
-    "edad": 25,
-    "peso": 75.5,
-    "altura": 1.78,
-    "sexo": "masculino",
-    "objetivo": "volumen",
-}
+from tests.conftest import crear_usuario_autenticado
 
 
-def _crear_usuario(client: TestClient, **overrides) -> dict:
-    payload = {**USUARIO_EJEMPLO, **overrides}
-    respuesta = client.post("/api/v1/usuarios/", json=payload)
-    assert respuesta.status_code == 201
-    return respuesta.json()
+def test_obtener_mi_perfil(client: TestClient) -> None:
+    usuario, headers = crear_usuario_autenticado(client)
 
-
-def test_crear_usuario(client: TestClient) -> None:
-    respuesta = client.post("/api/v1/usuarios/", json=USUARIO_EJEMPLO)
-
-    assert respuesta.status_code == 201
-    cuerpo = respuesta.json()
-    assert cuerpo["id"] is not None
-    assert cuerpo["nombre"] == USUARIO_EJEMPLO["nombre"]
-    assert cuerpo["email"] == USUARIO_EJEMPLO["email"]
-
-
-def test_crear_usuario_email_duplicado(client: TestClient) -> None:
-    _crear_usuario(client)
-
-    respuesta = client.post(
-        "/api/v1/usuarios/",
-        json={**USUARIO_EJEMPLO, "nombre": "Otro"},
-    )
-
-    assert respuesta.status_code == 409
-
-
-def test_listar_usuarios(client: TestClient) -> None:
-    _crear_usuario(client, email="uno@example.com")
-    _crear_usuario(client, email="dos@example.com")
-
-    respuesta = client.get("/api/v1/usuarios/")
+    respuesta = client.get("/api/v1/usuarios/me", headers=headers)
 
     assert respuesta.status_code == 200
-    emails = {usuario["email"] for usuario in respuesta.json()}
-    assert emails == {"uno@example.com", "dos@example.com"}
+    assert respuesta.json() == usuario
 
 
-def test_obtener_usuario_por_id(client: TestClient) -> None:
-    creado = _crear_usuario(client)
+def test_obtener_mi_perfil_sin_token(client: TestClient) -> None:
+    respuesta = client.get("/api/v1/usuarios/me")
 
-    respuesta = client.get(f"/api/v1/usuarios/{creado['id']}")
-
-    assert respuesta.status_code == 200
-    assert respuesta.json() == creado
+    assert respuesta.status_code == 401
 
 
-def test_obtener_usuario_inexistente(client: TestClient) -> None:
-    respuesta = client.get("/api/v1/usuarios/999999")
+def test_actualizar_mi_perfil_parcial(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
 
-    assert respuesta.status_code == 404
-
-
-def test_actualizar_usuario_parcial(client: TestClient) -> None:
-    creado = _crear_usuario(client)
-
-    respuesta = client.patch(f"/api/v1/usuarios/{creado['id']}", json={"peso": 80})
+    respuesta = client.patch("/api/v1/usuarios/me", json={"peso": 80}, headers=headers)
 
     assert respuesta.status_code == 200
     cuerpo = respuesta.json()
     assert cuerpo["peso"] == 80
-    assert cuerpo["nombre"] == creado["nombre"]
-    assert cuerpo["email"] == creado["email"]
 
 
-def test_eliminar_usuario(client: TestClient) -> None:
-    creado = _crear_usuario(client)
+def test_eliminar_mi_perfil(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
 
-    respuesta_delete = client.delete(f"/api/v1/usuarios/{creado['id']}")
+    respuesta_delete = client.delete("/api/v1/usuarios/me", headers=headers)
     assert respuesta_delete.status_code == 204
 
-    respuesta_get = client.get(f"/api/v1/usuarios/{creado['id']}")
-    assert respuesta_get.status_code == 404
+    respuesta_get = client.get("/api/v1/usuarios/me", headers=headers)
+    assert respuesta_get.status_code == 401

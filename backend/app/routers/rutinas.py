@@ -20,6 +20,7 @@ from app.schemas import (
     RutinaUpdate,
     SesionEntrenamientoRead,
 )
+from app.security import get_current_user
 
 router = APIRouter(prefix="/rutinas", tags=["rutinas"])
 
@@ -30,18 +31,16 @@ _CARGA_EJERCICIOS = selectinload(Rutina.ejercicios).options(
 )
 
 
-def _get_rutina_or_404(db: Session, rutina_id: int) -> Rutina:
+def _get_rutina_or_404(db: Session, rutina_id: int, usuario_id: int) -> Rutina:
     rutina = (
-        db.query(Rutina).options(_CARGA_EJERCICIOS).filter(Rutina.id == rutina_id).first()
+        db.query(Rutina)
+        .options(_CARGA_EJERCICIOS)
+        .filter(Rutina.id == rutina_id, Rutina.usuario_id == usuario_id)
+        .first()
     )
     if rutina is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Rutina no encontrada")
     return rutina
-
-
-def _validar_usuario(db: Session, usuario_id: int) -> None:
-    if db.get(Usuario, usuario_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
 
 
 def _validar_ejercicios(db: Session, asociaciones: list[RutinaEjercicioInput]) -> None:
@@ -74,11 +73,14 @@ def _reemplazar_ejercicios(
 
 
 @router.post("/", response_model=RutinaRead, status_code=status.HTTP_201_CREATED)
-def crear_rutina(rutina_in: RutinaCreate, db: Session = Depends(get_db)) -> Rutina:
-    _validar_usuario(db, rutina_in.usuario_id)
+def crear_rutina(
+    rutina_in: RutinaCreate,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Rutina:
     _validar_ejercicios(db, rutina_in.ejercicios)
 
-    rutina = Rutina(usuario_id=rutina_in.usuario_id, nombre=rutina_in.nombre)
+    rutina = Rutina(usuario_id=usuario_actual.id, nombre=rutina_in.nombre)
     db.add(rutina)
     db.flush()
     _reemplazar_ejercicios(db, rutina.id, rutina_in.ejercicios)
@@ -92,24 +94,43 @@ def crear_rutina(rutina_in: RutinaCreate, db: Session = Depends(get_db)) -> Ruti
             detail="No se pudo crear la rutina (datos duplicados o inválidos)",
         ) from exc
 
-    return _get_rutina_or_404(db, rutina.id)
+    return _get_rutina_or_404(db, rutina.id, usuario_actual.id)
 
 
 @router.get("/", response_model=list[RutinaRead])
-def listar_rutinas(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)) -> list[Rutina]:
-    return db.query(Rutina).options(_CARGA_EJERCICIOS).offset(skip).limit(limit).all()
+def listar_rutinas(
+    skip: int = 0,
+    limit: int = 100,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[Rutina]:
+    return (
+        db.query(Rutina)
+        .options(_CARGA_EJERCICIOS)
+        .filter(Rutina.usuario_id == usuario_actual.id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
 @router.get("/{rutina_id}", response_model=RutinaRead)
-def obtener_rutina(rutina_id: int, db: Session = Depends(get_db)) -> Rutina:
-    return _get_rutina_or_404(db, rutina_id)
+def obtener_rutina(
+    rutina_id: int,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Rutina:
+    return _get_rutina_or_404(db, rutina_id, usuario_actual.id)
 
 
 @router.patch("/{rutina_id}", response_model=RutinaRead)
 def actualizar_rutina(
-    rutina_id: int, rutina_in: RutinaUpdate, db: Session = Depends(get_db)
+    rutina_id: int,
+    rutina_in: RutinaUpdate,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> Rutina:
-    rutina = _get_rutina_or_404(db, rutina_id)
+    rutina = _get_rutina_or_404(db, rutina_id, usuario_actual.id)
 
     datos = rutina_in.model_dump(exclude_unset=True, exclude={"ejercicios"})
     for campo, valor in datos.items():
@@ -128,15 +149,19 @@ def actualizar_rutina(
             detail="No se pudo actualizar la rutina (datos duplicados o inválidos)",
         ) from exc
 
-    return _get_rutina_or_404(db, rutina.id)
+    return _get_rutina_or_404(db, rutina.id, usuario_actual.id)
 
 
 @router.delete("/{rutina_id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_rutina(rutina_id: int, db: Session = Depends(get_db)) -> None:
-    rutina = _get_rutina_or_404(db, rutina_id)
-    db.query(RutinaEjercicio).filter(RutinaEjercicio.rutina_id == rutina.id).delete()
-    db.delete(rutina)
+def eliminar_rutina(
+    rutina_id: int,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    rutina = _get_rutina_or_404(db, rutina_id, usuario_actual.id)
     try:
+        db.query(RutinaEjercicio).filter(RutinaEjercicio.rutina_id == rutina.id).delete()
+        db.delete(rutina)
         db.commit()
     except IntegrityError as exc:
         db.rollback()
@@ -149,11 +174,15 @@ def eliminar_rutina(rutina_id: int, db: Session = Depends(get_db)) -> None:
 @router.post(
     "/{rutina_id}/iniciar", response_model=SesionEntrenamientoRead, status_code=status.HTTP_201_CREATED
 )
-def iniciar_rutina(rutina_id: int, db: Session = Depends(get_db)) -> SesionEntrenamiento:
-    rutina = _get_rutina_or_404(db, rutina_id)
+def iniciar_rutina(
+    rutina_id: int,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SesionEntrenamiento:
+    rutina = _get_rutina_or_404(db, rutina_id, usuario_actual.id)
 
     sesion = SesionEntrenamiento(
-        usuario_id=rutina.usuario_id, rutina_id=rutina.id, fecha=date.today()
+        usuario_id=usuario_actual.id, rutina_id=rutina.id, fecha=date.today()
     )
     db.add(sesion)
     db.commit()

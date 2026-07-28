@@ -10,7 +10,7 @@ class RegistroEstadoAnimoBase(BaseModel):
 
 
 class RegistroEstadoAnimoCreate(RegistroEstadoAnimoBase):
-    usuario_id: int
+    pass
 
 
 class RegistroEstadoAnimoUpdate(BaseModel):

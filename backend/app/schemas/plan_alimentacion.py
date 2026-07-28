@@ -29,7 +29,6 @@ class PlanAlimentacionBase(BaseModel):
 
 
 class PlanAlimentacionCreate(PlanAlimentacionBase):
-    usuario_id: int
     dias: list[PlanDiaInput] = []
 
 

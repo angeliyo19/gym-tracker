@@ -8,7 +8,7 @@ class ComidaBase(BaseModel):
 
 
 class ComidaCreate(ComidaBase):
-    usuario_id: int
+    pass
 
 
 class ComidaUpdate(BaseModel):

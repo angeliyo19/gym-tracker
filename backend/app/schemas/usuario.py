@@ -11,10 +11,6 @@ class UsuarioBase(BaseModel):
     objetivo: str
 
 
-class UsuarioCreate(UsuarioBase):
-    pass
-
-
 class UsuarioUpdate(BaseModel):
     nombre: str | None = None
     email: EmailStr | None = None

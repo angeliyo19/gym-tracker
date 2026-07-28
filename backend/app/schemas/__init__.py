@@ -1,3 +1,4 @@
+from app.schemas.auth import Token, UsuarioRegistro
 from app.schemas.comida import ComidaCreate, ComidaRead, ComidaUpdate
 from app.schemas.ejercicio import (
     EjercicioCreate,
@@ -34,10 +35,9 @@ from app.schemas.rutina import (
 )
 from app.schemas.serie import SerieCreate, SerieRead, SerieUpdate
 from app.schemas.sesion_entrenamiento import SesionEntrenamientoRead
-from app.schemas.usuario import UsuarioCreate, UsuarioRead, UsuarioUpdate
+from app.schemas.usuario import UsuarioRead, UsuarioUpdate
 
 __all__ = [
-    "UsuarioCreate",
     "UsuarioUpdate",
     "UsuarioRead",
     "GrupoMuscularCreate",
@@ -74,4 +74,6 @@ __all__ = [
     "RegistroEstadoAnimoCreate",
     "RegistroEstadoAnimoUpdate",
     "RegistroEstadoAnimoRead",
+    "UsuarioRegistro",
+    "Token",
 ]

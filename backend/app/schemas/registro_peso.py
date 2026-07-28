@@ -10,7 +10,7 @@ class RegistroPesoBase(BaseModel):
 
 
 class RegistroPesoCreate(RegistroPesoBase):
-    usuario_id: int
+    pass
 
 
 class RegistroPesoUpdate(BaseModel):
