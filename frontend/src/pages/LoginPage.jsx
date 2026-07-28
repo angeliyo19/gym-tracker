@@ -21,7 +21,7 @@ export function LoginPage() {
     setEnviando(true)
     try {
       await login(email, password)
-      navigate('/rutinas', { replace: true })
+      navigate('/', { replace: true })
     } catch {
       setError('Email o contraseña incorrectos')
     } finally {

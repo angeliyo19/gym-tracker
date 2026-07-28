@@ -1,7 +1,7 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-export function RutaProtegida({ children }) {
+export function RutaProtegida() {
   const { usuario, cargando } = useAuth()
 
   if (cargando) {
@@ -12,5 +12,5 @@ export function RutaProtegida({ children }) {
     return <Navigate to="/login" replace />
   }
 
-  return children
+  return <Outlet />
 }

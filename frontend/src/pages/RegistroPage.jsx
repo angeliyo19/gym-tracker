@@ -40,7 +40,7 @@ export function RegistroPage() {
         peso: Number(valores.peso),
         altura: Number(valores.altura),
       })
-      navigate('/rutinas', { replace: true })
+      navigate('/', { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {
