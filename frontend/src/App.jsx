@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react'
-import { UsuariosPage } from './pages/UsuariosPage'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { RutinasPage } from './pages/RutinasPage'
+import { LoginPage } from './pages/LoginPage'
+import { RegistroPage } from './pages/RegistroPage'
+import { RutaProtegida } from './components/RutaProtegida'
 import { ThemeToggle } from './components/ThemeToggle'
-
-const PAGINAS = {
-  rutinas: { etiqueta: 'Rutinas', Componente: RutinasPage },
-  usuarios: { etiqueta: 'Usuarios', Componente: UsuariosPage },
-}
+import { Button } from './components/ui/Button'
+import { useAuth } from './context/AuthContext'
 
 function App() {
-  const [pagina, setPagina] = useState('rutinas')
   const [oscuro, setOscuro] = useState(false)
-  const { Componente } = PAGINAS[pagina]
+  const { usuario, logout } = useAuth()
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', oscuro)
@@ -29,27 +28,29 @@ function App() {
           </div>
 
           <div className="flex items-center gap-3">
-            <nav className="flex gap-1 rounded-full border border-border bg-surface p-1">
-              {Object.entries(PAGINAS).map(([clave, { etiqueta }]) => (
-                <button
-                  key={clave}
-                  type="button"
-                  onClick={() => setPagina(clave)}
-                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                    pagina === clave
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-ink-muted hover:text-ink'
-                  }`}
-                >
-                  {etiqueta}
-                </button>
-              ))}
-            </nav>
+            {usuario && (
+              <Button variant="ghost" onClick={logout}>
+                Cerrar sesión
+              </Button>
+            )}
             <ThemeToggle oscuro={oscuro} onToggle={() => setOscuro((actual) => !actual)} />
           </div>
         </div>
       </header>
-      <Componente />
+
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/registro" element={<RegistroPage />} />
+        <Route
+          path="/rutinas"
+          element={
+            <RutaProtegida>
+              <RutinasPage />
+            </RutaProtegida>
+          }
+        />
+        <Route path="*" element={<Navigate to="/rutinas" replace />} />
+      </Routes>
     </div>
   )
 }

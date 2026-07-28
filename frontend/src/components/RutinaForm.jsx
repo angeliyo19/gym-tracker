@@ -17,7 +17,7 @@ const CAMPO =
   'rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink ' +
   'focus:outline-none focus:ring-2 focus:ring-accent'
 
-export function RutinaForm({ usuarioId, onCreated, onCancel }) {
+export function RutinaForm({ onCreated, onCancel }) {
   const [ejercicios, setEjercicios] = useState([])
   const [cargandoCatalogo, setCargandoCatalogo] = useState(true)
   const [error, setError] = useState(null)
@@ -60,7 +60,6 @@ export function RutinaForm({ usuarioId, onCreated, onCancel }) {
     try {
       const rutina = await createRutina({
         nombre,
-        usuario_id: usuarioId,
         ejercicios: filas.map((fila) => ({
           ejercicio_id: Number(fila.ejercicio_id),
           orden: Number(fila.orden),

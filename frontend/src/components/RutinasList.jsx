@@ -20,7 +20,7 @@ export function RutinasList({ rutinas, onSelect, onNew }) {
         <div className="mt-6">
           <EmptyState
             title="Todavía no hay rutinas"
-            description="Crea la primera rutina de este usuario eligiendo ejercicios del catálogo."
+            description="Crea tu primera rutina eligiendo ejercicios del catálogo."
             action={
               <Button variant="primary" onClick={onNew}>
                 + Nueva rutina
