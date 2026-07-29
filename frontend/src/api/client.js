@@ -28,7 +28,13 @@ async function request(path, options = {}) {
   }
 
   if (!respuesta.ok) {
-    throw new Error(`Error ${respuesta.status} al llamar a ${path}`)
+    // FastAPI devuelve el mensaje legible en el campo "detail" (salvo en
+    // errores 422 de validación, donde detail es una lista de objetos, no un
+    // string). Si existe y es un string, se usa tal cual para que la UI
+    // pueda mostrar el motivo real en vez de un mensaje técnico genérico.
+    const cuerpo = await respuesta.json().catch(() => null)
+    const mensaje = typeof cuerpo?.detail === 'string' ? cuerpo.detail : null
+    throw new Error(mensaje ?? `Error ${respuesta.status} al llamar a ${path}`)
   }
 
   if (respuesta.status === 204) {

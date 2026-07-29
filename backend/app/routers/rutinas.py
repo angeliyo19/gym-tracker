@@ -10,6 +10,7 @@ from app.models import (
     EjercicioGrupoMuscular,
     Rutina,
     RutinaEjercicio,
+    RutinaProgramada,
     Serie,
     SesionEntrenamiento,
     Usuario,
@@ -166,6 +167,28 @@ def eliminar_rutina(
     db: Session = Depends(get_db),
 ) -> None:
     rutina = _get_rutina_or_404(db, rutina_id, usuario_actual.id)
+
+    programada = (
+        db.query(RutinaProgramada).filter(RutinaProgramada.rutina_id == rutina.id).first()
+    )
+    if programada is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se puede eliminar: quita esta rutina de tu horario semanal antes de eliminarla",
+        )
+
+    tiene_sesiones = (
+        db.query(SesionEntrenamiento.id)
+        .filter(SesionEntrenamiento.rutina_id == rutina.id)
+        .first()
+        is not None
+    )
+    if tiene_sesiones:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se puede eliminar: la rutina tiene sesiones de entrenamiento registradas",
+        )
+
     try:
         db.query(RutinaEjercicio).filter(RutinaEjercicio.rutina_id == rutina.id).delete()
         db.delete(rutina)
@@ -174,7 +197,7 @@ def eliminar_rutina(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="No se puede eliminar: la rutina tiene sesiones de entrenamiento registradas",
+            detail="No se puede eliminar: la rutina está en uso",
         ) from exc
 
 

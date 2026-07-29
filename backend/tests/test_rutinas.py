@@ -244,6 +244,60 @@ def test_eliminar_rutina_con_sesiones_asociadas(client: TestClient) -> None:
     respuesta = client.delete(f"/api/v1/rutinas/{creada['id']}", headers=headers)
 
     assert respuesta.status_code == 409
+    assert "sesiones de entrenamiento" in respuesta.json()["detail"]
+
+
+def test_eliminar_rutina_en_horario_semanal_devuelve_409(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    creada = _crear_rutina(client, headers)
+    respuesta_programar = client.post(
+        "/api/v1/rutinas-programadas/",
+        json={"dia_semana": "lunes", "rutina_id": creada["id"]},
+        headers=headers,
+    )
+    assert respuesta_programar.status_code == 201
+
+    respuesta = client.delete(f"/api/v1/rutinas/{creada['id']}", headers=headers)
+
+    assert respuesta.status_code == 409
+    assert "horario semanal" in respuesta.json()["detail"]
+
+    # Y sigue existiendo: el 409 no debe haber borrado nada a medias.
+    respuesta_get = client.get(f"/api/v1/rutinas/{creada['id']}", headers=headers)
+    assert respuesta_get.status_code == 200
+
+
+def test_eliminar_rutina_quitando_del_horario_permite_borrarla(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    creada = _crear_rutina(client, headers)
+    programada = client.post(
+        "/api/v1/rutinas-programadas/",
+        json={"dia_semana": "lunes", "rutina_id": creada["id"]},
+        headers=headers,
+    ).json()
+
+    client.delete(f"/api/v1/rutinas-programadas/{programada['id']}", headers=headers)
+    respuesta = client.delete(f"/api/v1/rutinas/{creada['id']}", headers=headers)
+
+    assert respuesta.status_code == 204
+
+
+def test_eliminar_rutina_con_sesiones_y_horario_prioriza_mensaje_de_horario(
+    client: TestClient,
+) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    creada = _crear_rutina(client, headers)
+    client.post(f"/api/v1/rutinas/{creada['id']}/iniciar", headers=headers)
+    client.post(
+        "/api/v1/rutinas-programadas/",
+        json={"dia_semana": "lunes", "rutina_id": creada["id"]},
+        headers=headers,
+    )
+
+    respuesta = client.delete(f"/api/v1/rutinas/{creada['id']}", headers=headers)
+
+    assert respuesta.status_code == 409
+    assert "horario semanal" in respuesta.json()["detail"]
 
 
 def test_iniciar_rutina(client: TestClient) -> None:

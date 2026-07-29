@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getRutina, iniciarRutina } from '../api/rutinas'
+import { eliminarRutina, getRutina, iniciarRutina } from '../api/rutinas'
 import { RutinaForm } from './RutinaForm'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
 import { EmptyState } from './ui/EmptyState'
+import { Modal } from './ui/Modal'
 import { PageHeader } from './ui/PageHeader'
 
-export function RutinaDetalle({ rutinaId, onVolver }) {
+export function RutinaDetalle({ rutinaId, onVolver, onEliminada }) {
   const navigate = useNavigate()
   const [rutina, setRutina] = useState(null)
   const [error, setError] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [iniciando, setIniciando] = useState(false)
   const [editando, setEditando] = useState(false)
+  const [confirmandoEliminar, setConfirmandoEliminar] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
+  const [errorEliminar, setErrorEliminar] = useState(null)
 
   function cargarRutina() {
     setCargando(true)
@@ -37,6 +41,18 @@ export function RutinaDetalle({ rutinaId, onVolver }) {
     } catch (err) {
       setError(err.message)
       setIniciando(false)
+    }
+  }
+
+  async function manejarEliminar() {
+    setErrorEliminar(null)
+    setEliminando(true)
+    try {
+      await eliminarRutina(rutina.id)
+      onEliminada()
+    } catch (err) {
+      setErrorEliminar(err.message)
+      setEliminando(false)
     }
   }
 
@@ -85,6 +101,9 @@ export function RutinaDetalle({ rutinaId, onVolver }) {
                   <Button variant="secondary" onClick={() => setEditando(true)}>
                     Editar
                   </Button>
+                  <Button variant="danger" onClick={() => setConfirmandoEliminar(true)}>
+                    Eliminar
+                  </Button>
                   <Button variant="primary" onClick={manejarIniciar} disabled={iniciando}>
                     {iniciando ? 'Iniciando...' : 'Iniciar sesión'}
                   </Button>
@@ -123,6 +142,34 @@ export function RutinaDetalle({ rutinaId, onVolver }) {
             </Card>
           )}
         </>
+      )}
+
+      {confirmandoEliminar && (
+        <Modal title="Eliminar rutina" onClose={() => setConfirmandoEliminar(false)}>
+          <p className="text-sm text-ink-muted">
+            ¿Seguro que quieres eliminar <span className="font-medium text-ink">{rutina.nombre}</span>?
+            Esta acción no se puede deshacer.
+          </p>
+
+          {errorEliminar && (
+            <p className="mt-3 rounded-lg bg-red-500/10 p-2 text-xs text-red-500">
+              {errorEliminar}
+            </p>
+          )}
+
+          <div className="mt-5 flex gap-2">
+            <Button variant="danger" onClick={manejarEliminar} disabled={eliminando}>
+              {eliminando ? 'Eliminando...' : 'Sí, eliminar'}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setConfirmandoEliminar(false)}
+              disabled={eliminando}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </Modal>
       )}
     </div>
   )

@@ -19,3 +19,7 @@ export function updateRutina(id, datos) {
 export function iniciarRutina(id) {
   return apiClient.post(`/api/v1/rutinas/${id}/iniciar`)
 }
+
+export function eliminarRutina(id) {
+  return apiClient.delete(`/api/v1/rutinas/${id}`)
+}

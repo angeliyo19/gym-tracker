@@ -26,7 +26,14 @@ export function RutinasPage() {
   return (
     <main className="mx-auto max-w-xl px-8 py-10">
       {vista === 'detalle' && (
-        <RutinaDetalle rutinaId={rutinaSeleccionadaId} onVolver={() => setVista('lista')} />
+        <RutinaDetalle
+          rutinaId={rutinaSeleccionadaId}
+          onVolver={() => setVista('lista')}
+          onEliminada={() => {
+            cargarRutinas()
+            setVista('lista')
+          }}
+        />
       )}
 
       {vista === 'nueva' && (
