@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { InicioPage } from './pages/InicioPage'
 import { RutinasPage } from './pages/RutinasPage'
 import { HorarioSemanalPage } from './pages/HorarioSemanalPage'
 import { CalendarioPage } from './pages/CalendarioPage'
@@ -43,10 +42,9 @@ function App() {
 
         <Route element={<RutaProtegida />}>
           <Route element={<LayoutPrincipal />}>
-            <Route path="/" element={<InicioPage />} />
+            <Route path="/" element={<CalendarioPage />} />
             <Route path="/entrenamiento/rutinas" element={<RutinasPage />} />
             <Route path="/entrenamiento/horario" element={<HorarioSemanalPage />} />
-            <Route path="/entrenamiento/calendario" element={<CalendarioPage />} />
             <Route path="/entrenamiento/historial" element={<HistorialPage />} />
             <Route path="/entrenamiento/sesiones/:id" element={<SesionEnVivoPage />} />
             <Route path="/alimentacion" element={<AlimentacionPage />} />

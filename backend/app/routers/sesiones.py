@@ -93,9 +93,15 @@ def actualizar_sesion(
     usuario_actual: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> SesionEntrenamiento:
-    """Cambia la rutina de una sesión concreta (ej. desde el calendario), sin
-    afectar al patrón semanal de RutinaProgramada que la generó."""
+    """Cambia la fecha y/o la rutina de una sesión concreta (ej. desde el
+    calendario), sin afectar al patrón semanal de RutinaProgramada que la
+    generó. Solo se permite mientras la sesión no se haya finalizado."""
     sesion = _get_sesion_or_404(db, sesion_id, usuario_actual.id)
+    if sesion.completada:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No se puede modificar una sesión ya completada",
+        )
 
     datos = sesion_in.model_dump(exclude_unset=True)
     if "rutina_id" in datos:

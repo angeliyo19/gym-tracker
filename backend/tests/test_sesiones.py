@@ -190,6 +190,54 @@ def test_actualizar_sesion_cambia_rutina(client: TestClient) -> None:
     assert cuerpo["completada"] is False
 
 
+def test_actualizar_sesion_cambia_fecha(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    rutina = _crear_rutina(client, headers)
+    sesion = _iniciar_rutina(client, rutina["id"], headers)
+
+    respuesta = client.patch(
+        f"/api/v1/sesiones/{sesion['id']}", json={"fecha": "2026-08-15"}, headers=headers
+    )
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert cuerpo["fecha"] == "2026-08-15"
+    assert cuerpo["rutina_id"] == sesion["rutina_id"]
+
+
+def test_actualizar_sesion_completada_devuelve_409(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    rutina_1 = _crear_rutina(client, headers, nombre="Push day")
+    rutina_2 = _crear_rutina(client, headers, nombre="Pull day")
+    sesion = _iniciar_rutina(client, rutina_1["id"], headers)
+    client.post(f"/api/v1/sesiones/{sesion['id']}/finalizar", headers=headers)
+
+    respuesta = client.patch(
+        f"/api/v1/sesiones/{sesion['id']}", json={"rutina_id": rutina_2["id"]}, headers=headers
+    )
+
+    assert respuesta.status_code == 409
+
+
+def test_actualizar_sesion_completada_no_cambia_datos(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    rutina_1 = _crear_rutina(client, headers, nombre="Push day")
+    rutina_2 = _crear_rutina(client, headers, nombre="Pull day")
+    sesion = _iniciar_rutina(client, rutina_1["id"], headers)
+    client.post(f"/api/v1/sesiones/{sesion['id']}/finalizar", headers=headers)
+
+    client.patch(
+        f"/api/v1/sesiones/{sesion['id']}",
+        json={"fecha": "2026-08-15", "rutina_id": rutina_2["id"]},
+        headers=headers,
+    )
+
+    respuesta = client.get(f"/api/v1/sesiones/{sesion['id']}", headers=headers)
+    cuerpo = respuesta.json()
+    assert cuerpo["fecha"] == sesion["fecha"]
+    assert cuerpo["rutina_id"] == rutina_1["id"]
+
+
 def test_actualizar_sesion_no_afecta_otras_sesiones(client: TestClient) -> None:
     _, headers = crear_usuario_autenticado(client)
     rutina_1 = _crear_rutina(client, headers, nombre="Push day")

@@ -18,6 +18,7 @@ class SesionEntrenamientoRead(BaseModel):
 
 
 class SesionEntrenamientoUpdate(BaseModel):
+    fecha: date | None = None
     rutina_id: int | None = None
 
 

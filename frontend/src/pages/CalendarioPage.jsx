@@ -1,5 +1,6 @@
 import esLocale from '@fullcalendar/core/locales/es'
 import dayGridPlugin from '@fullcalendar/daygrid'
+import interactionPlugin from '@fullcalendar/interaction'
 import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import { useEffect, useState } from 'react'
@@ -7,7 +8,6 @@ import { useNavigate } from 'react-router-dom'
 import { getCalendario } from '../api/calendario'
 import { getRutinas } from '../api/rutinas'
 import { actualizarSesion } from '../api/sesiones'
-import { EntrenamientoTabs } from '../components/EntrenamientoTabs'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
 import { PageHeader } from '../components/ui/PageHeader'
@@ -34,6 +34,8 @@ function sesionAEvento(sesion) {
     title: sesion.rutina.nombre,
     start: sesion.fecha,
     allDay: true,
+    startEditable: !sesion.completada,
+    durationEditable: false,
     backgroundColor: color,
     borderColor: color,
     textColor: colorTexto,
@@ -89,6 +91,28 @@ export function CalendarioPage() {
     setModoModal('acciones')
   }
 
+  async function manejarSoltarEvento(info) {
+    const sesion = info.event.extendedProps.sesion
+    if (sesion.completada) {
+      info.revert()
+      return
+    }
+    const nuevaFecha = formatearFechaLocal(info.event.start)
+    try {
+      const actualizada = await actualizarSesion(sesion.id, { fecha: nuevaFecha })
+      setEventos((actuales) =>
+        actuales.map((evento) =>
+          evento.id === String(actualizada.id)
+            ? sesionAEvento({ ...sesion, ...actualizada })
+            : evento,
+        ),
+      )
+    } catch (err) {
+      setError(err.message)
+      info.revert()
+    }
+  }
+
   function cerrarModal() {
     setSesionSeleccionada(null)
     setErrorModal(null)
@@ -123,11 +147,14 @@ export function CalendarioPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-8 py-10">
-      <EntrenamientoTabs />
-
       <PageHeader
         title="Calendario"
-        description="Tus sesiones programadas. Verde: completada. Gris: pendiente."
+        description="Verde: completada. Gris: pendiente. Arrastra una sesión pendiente para cambiarla de día."
+        action={
+          <Button variant="secondary" onClick={() => navigate('/entrenamiento/horario')}>
+            Horario semanal
+          </Button>
+        }
       />
 
       {error && (
@@ -136,7 +163,7 @@ export function CalendarioPage() {
 
       <div className="calendario-tema mt-6">
         <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin]}
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
           headerToolbar={{
             left: 'prev,next today',
@@ -145,8 +172,10 @@ export function CalendarioPage() {
           }}
           locale={esLocale}
           height="auto"
+          editable
           events={eventos}
           eventClick={manejarClickEvento}
+          eventDrop={manejarSoltarEvento}
           datesSet={manejarCambioRango}
         />
       </div>
