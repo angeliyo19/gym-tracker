@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Aplica el tema guardado antes del primer pintado, para no mostrar un
+      // parpadeo con el tema equivocado mientras React arranca.
+      try {
+        if (localStorage.getItem('tema') === 'oscuro') {
+          document.documentElement.classList.add('dark')
+        }
+      } catch (e) {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

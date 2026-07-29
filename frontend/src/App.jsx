@@ -11,11 +11,14 @@ import { RutaProtegida } from './components/RutaProtegida'
 import { LayoutPrincipal } from './components/LayoutPrincipal'
 import { ThemeToggle } from './components/ThemeToggle'
 
+const CLAVE_TEMA = 'tema'
+
 function App() {
-  const [oscuro, setOscuro] = useState(false)
+  const [oscuro, setOscuro] = useState(() => localStorage.getItem(CLAVE_TEMA) === 'oscuro')
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', oscuro)
+    localStorage.setItem(CLAVE_TEMA, oscuro ? 'oscuro' : 'claro')
   }, [oscuro])
 
   return (

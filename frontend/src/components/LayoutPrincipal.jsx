@@ -36,7 +36,7 @@ export function LayoutPrincipal() {
 
           <div className="flex items-center gap-3">
             <span className="text-sm text-ink-muted">Hola, {usuario.nombre}</span>
-            <Button variant="ghost" onClick={logout}>
+            <Button variant="ghostDanger" onClick={logout}>
               Cerrar sesión
             </Button>
           </div>

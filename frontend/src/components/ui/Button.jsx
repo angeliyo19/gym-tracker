@@ -8,6 +8,7 @@ const VARIANTES = {
   secondary:
     'bg-surface text-ink border border-border hover:bg-surface-hover px-4 py-2 text-sm',
   ghost: 'text-ink-muted hover:text-ink hover:bg-surface-hover px-3 py-1.5 text-sm',
+  ghostDanger: 'text-ink-muted hover:text-red-500 hover:bg-red-500/10 px-3 py-1.5 text-sm',
   danger: 'text-red-500 hover:bg-red-500/10 px-3 py-1.5 text-sm',
 }
 
