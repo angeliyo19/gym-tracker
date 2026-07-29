@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { InicioPage } from './pages/InicioPage'
 import { RutinasPage } from './pages/RutinasPage'
+import { SesionEnVivoPage } from './pages/SesionEnVivoPage'
 import { AlimentacionPage } from './pages/AlimentacionPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegistroPage } from './pages/RegistroPage'
@@ -38,6 +39,7 @@ function App() {
           <Route element={<LayoutPrincipal />}>
             <Route path="/" element={<InicioPage />} />
             <Route path="/entrenamiento/rutinas" element={<RutinasPage />} />
+            <Route path="/entrenamiento/sesiones/:id" element={<SesionEnVivoPage />} />
             <Route path="/alimentacion" element={<AlimentacionPage />} />
           </Route>
         </Route>

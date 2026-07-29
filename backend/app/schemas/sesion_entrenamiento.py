@@ -2,6 +2,8 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.rutina import RutinaRead
+
 
 class SesionEntrenamientoRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -22,4 +24,9 @@ class UltimaSerieRef(BaseModel):
 
 
 class IniciarRutinaRead(SesionEntrenamientoRead):
+    ultimas_series: list[UltimaSerieRef]
+
+
+class SesionDetalleRead(SesionEntrenamientoRead):
+    rutina: RutinaRead
     ultimas_series: list[UltimaSerieRef]

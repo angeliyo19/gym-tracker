@@ -188,6 +188,25 @@ def _ultima_serie_de_ejercicio(
     )
 
 
+def construir_ultimas_series(
+    db: Session, usuario_id: int, ejercicio_ids: set[int]
+) -> list[UltimaSerieRef]:
+    ultimas_series = []
+    for ejercicio_id in ejercicio_ids:
+        resultado = _ultima_serie_de_ejercicio(db, usuario_id, ejercicio_id)
+        if resultado is not None:
+            serie, fecha = resultado
+            ultimas_series.append(
+                UltimaSerieRef(
+                    ejercicio_id=ejercicio_id,
+                    peso=serie.peso,
+                    repeticiones=serie.repeticiones,
+                    fecha=fecha,
+                )
+            )
+    return ultimas_series
+
+
 @router.post(
     "/{rutina_id}/iniciar", response_model=IniciarRutinaRead, status_code=status.HTTP_201_CREATED
 )
@@ -206,19 +225,7 @@ def iniciar_rutina(
     db.refresh(sesion)
 
     ejercicio_ids = {asociacion.ejercicio_id for asociacion in rutina.ejercicios}
-    ultimas_series = []
-    for ejercicio_id in ejercicio_ids:
-        resultado = _ultima_serie_de_ejercicio(db, usuario_actual.id, ejercicio_id)
-        if resultado is not None:
-            serie, fecha = resultado
-            ultimas_series.append(
-                UltimaSerieRef(
-                    ejercicio_id=ejercicio_id,
-                    peso=serie.peso,
-                    repeticiones=serie.repeticiones,
-                    fecha=fecha,
-                )
-            )
+    ultimas_series = construir_ultimas_series(db, usuario_actual.id, ejercicio_ids)
 
     return IniciarRutinaRead(
         id=sesion.id,

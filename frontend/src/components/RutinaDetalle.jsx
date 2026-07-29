@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
-import { getRutina } from '../api/rutinas'
+import { useNavigate } from 'react-router-dom'
+import { getRutina, iniciarRutina } from '../api/rutinas'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
 import { EmptyState } from './ui/EmptyState'
 import { PageHeader } from './ui/PageHeader'
 
 export function RutinaDetalle({ rutinaId, onVolver }) {
+  const navigate = useNavigate()
   const [rutina, setRutina] = useState(null)
   const [error, setError] = useState(null)
   const [cargando, setCargando] = useState(true)
+  const [iniciando, setIniciando] = useState(false)
 
   useEffect(() => {
     setCargando(true)
@@ -17,6 +20,21 @@ export function RutinaDetalle({ rutinaId, onVolver }) {
       .catch((err) => setError(err.message))
       .finally(() => setCargando(false))
   }, [rutinaId])
+
+  async function manejarIniciar() {
+    setError(null)
+    setIniciando(true)
+    try {
+      const sesion = await iniciarRutina(rutina.id)
+      // Mismo shape que devuelve GET /sesiones/{id} (rutina anidada), para
+      // que SesionEnVivoPage pueda usar este estado indistintamente como
+      // optimización sin esperar a la carga desde el backend.
+      navigate(`/entrenamiento/sesiones/${sesion.id}`, { state: { sesion: { ...sesion, rutina } } })
+    } catch (err) {
+      setError(err.message)
+      setIniciando(false)
+    }
+  }
 
   return (
     <div>
@@ -33,7 +51,14 @@ export function RutinaDetalle({ rutinaId, onVolver }) {
       {rutina && (
         <>
           <div className="mt-4">
-            <PageHeader title={rutina.nombre} />
+            <PageHeader
+              title={rutina.nombre}
+              action={
+                <Button variant="primary" onClick={manejarIniciar} disabled={iniciando}>
+                  {iniciando ? 'Iniciando...' : 'Iniciar sesión'}
+                </Button>
+              }
+            />
           </div>
 
           {rutina.ejercicios.length === 0 && (

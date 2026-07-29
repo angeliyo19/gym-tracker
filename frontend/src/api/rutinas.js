@@ -11,3 +11,7 @@ export function getRutina(id) {
 export function createRutina(rutina) {
   return apiClient.post('/api/v1/rutinas/', rutina)
 }
+
+export function iniciarRutina(id) {
+  return apiClient.post(`/api/v1/rutinas/${id}/iniciar`)
+}
