@@ -55,3 +55,13 @@ def get_current_user(
     if usuario is None:
         raise _CREDENCIALES_INVALIDAS
     return usuario
+
+
+def require_admin(usuario_actual: Usuario = Depends(get_current_user)) -> Usuario:
+    """Dependencia de FastAPI: exige que el usuario autenticado tenga rol admin."""
+    if usuario_actual.rol != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requiere rol de administrador",
+        )
+    return usuario_actual

@@ -3,15 +3,21 @@ from datetime import date, timedelta
 from fastapi.testclient import TestClient
 
 from app.schemas.rutina_programada import DIAS_SEMANA
-from tests.conftest import crear_usuario_autenticado
+from tests.conftest import crear_usuario_admin_autenticado, crear_usuario_autenticado
 
 HOY = date.today()
 DIA_SEMANA_HOY = DIAS_SEMANA[HOY.weekday()]
 
 
 def _crear_ejercicio(client: TestClient, nombre: str = "Press banca") -> dict:
+    # Crear un ejercicio requiere rol admin; se usa un admin de usar-y-tirar
+    # ajeno al usuario "normal" que protagoniza cada test, ya que el catálogo
+    # de ejercicios no pertenece a ningún usuario en particular.
+    _, headers_admin = crear_usuario_admin_autenticado(client)
     respuesta = client.post(
-        "/api/v1/ejercicios/", json={"nombre": nombre, "tipo": "compuesto", "grupos_musculares": []}
+        "/api/v1/ejercicios/",
+        json={"nombre": nombre, "tipo": "compuesto", "grupos_musculares": []},
+        headers=headers_admin,
     )
     assert respuesta.status_code == 201
     return respuesta.json()

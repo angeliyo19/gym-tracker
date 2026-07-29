@@ -25,3 +25,7 @@ class UsuarioRead(UsuarioBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    # Deliberadamente no está en UsuarioUpdate: el rol no debe poder
+    # cambiarse desde PATCH /usuarios/me (un usuario no puede auto-asignarse
+    # admin). Solo se expone en la lectura.
+    rol: str

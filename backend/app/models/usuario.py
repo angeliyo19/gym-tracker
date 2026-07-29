@@ -28,6 +28,7 @@ class Usuario(Base):
     altura: Mapped[float]
     sexo: Mapped[str] = mapped_column(String(20))
     objetivo: Mapped[str] = mapped_column(String(20))
+    rol: Mapped[str] = mapped_column(String(20), default="usuario")
 
     sesiones: Mapped[list["SesionEntrenamiento"]] = relationship(back_populates="usuario")
     rutinas: Mapped[list["Rutina"]] = relationship(back_populates="usuario", passive_deletes="all")

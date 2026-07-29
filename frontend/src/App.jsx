@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { RutinasPage } from './pages/RutinasPage'
 import { HorarioSemanalPage } from './pages/HorarioSemanalPage'
+import { CatalogoPage } from './pages/CatalogoPage'
 import { CalendarioPage } from './pages/CalendarioPage'
 import { HistorialPage } from './pages/HistorialPage'
 import { SesionEnVivoPage } from './pages/SesionEnVivoPage'
@@ -48,6 +49,7 @@ function App() {
             <Route path="/entrenamiento/historial" element={<HistorialPage />} />
             <Route path="/entrenamiento/sesiones/:id" element={<SesionEnVivoPage />} />
             <Route path="/alimentacion" element={<AlimentacionPage />} />
+            <Route path="/catalogo" element={<CatalogoPage />} />
           </Route>
         </Route>
 

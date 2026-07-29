@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from app.config import settings
 from app.db import get_db
 from app.main import app
-from app.models import Base
+from app.models import Base, Usuario
 
 PASSWORD_POR_DEFECTO = "clave-super-segura-123"
 
@@ -85,5 +85,30 @@ def auth_headers(token: str) -> dict:
 def crear_usuario_autenticado(client: TestClient, **overrides) -> tuple[dict, dict]:
     """Registra un usuario y devuelve (usuario, headers) listos para usar en peticiones."""
     usuario = registrar_usuario(client, **overrides)
+    token = obtener_token(client, usuario["email"])
+    return usuario, auth_headers(token)
+
+
+def hacer_admin(email: str) -> None:
+    """Promueve un usuario a rol admin directamente en la BD.
+
+    No existe (ni debe existir) un endpoint público para esto: el rol no es
+    editable vía PATCH /usuarios/me a propósito, así que los tests que
+    necesitan un admin lo consiguen escribiendo directamente en la BD de
+    test, igual que lo haría un administrador de base de datos real.
+    """
+    db = TestingSessionLocal()
+    try:
+        usuario = db.query(Usuario).filter(Usuario.email == email).one()
+        usuario.rol = "admin"
+        db.commit()
+    finally:
+        db.close()
+
+
+def crear_usuario_admin_autenticado(client: TestClient, **overrides) -> tuple[dict, dict]:
+    """Registra un usuario, lo promueve a admin y devuelve (usuario, headers)."""
+    usuario = registrar_usuario(client, **overrides)
+    hacer_admin(usuario["email"])
     token = obtener_token(client, usuario["email"])
     return usuario, auth_headers(token)

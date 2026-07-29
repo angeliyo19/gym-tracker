@@ -3,8 +3,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models import GrupoMuscular
+from app.models import GrupoMuscular, Usuario
 from app.schemas import GrupoMuscularCreate, GrupoMuscularRead, GrupoMuscularUpdate
+from app.security import get_current_user, require_admin
 
 router = APIRouter(prefix="/grupos-musculares", tags=["grupos-musculares"])
 
@@ -17,7 +18,11 @@ def _get_grupo_muscular_or_404(db: Session, grupo_muscular_id: int) -> GrupoMusc
 
 
 @router.post("/", response_model=GrupoMuscularRead, status_code=status.HTTP_201_CREATED)
-def crear_grupo_muscular(grupo_in: GrupoMuscularCreate, db: Session = Depends(get_db)) -> GrupoMuscular:
+def crear_grupo_muscular(
+    grupo_in: GrupoMuscularCreate,
+    usuario_actual: Usuario = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> GrupoMuscular:
     grupo = GrupoMuscular(**grupo_in.model_dump())
     db.add(grupo)
     try:
@@ -34,19 +39,29 @@ def crear_grupo_muscular(grupo_in: GrupoMuscularCreate, db: Session = Depends(ge
 
 @router.get("/", response_model=list[GrupoMuscularRead])
 def listar_grupos_musculares(
-    skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
+    skip: int = 0,
+    limit: int = 100,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> list[GrupoMuscular]:
     return db.query(GrupoMuscular).offset(skip).limit(limit).all()
 
 
 @router.get("/{grupo_muscular_id}", response_model=GrupoMuscularRead)
-def obtener_grupo_muscular(grupo_muscular_id: int, db: Session = Depends(get_db)) -> GrupoMuscular:
+def obtener_grupo_muscular(
+    grupo_muscular_id: int,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> GrupoMuscular:
     return _get_grupo_muscular_or_404(db, grupo_muscular_id)
 
 
 @router.patch("/{grupo_muscular_id}", response_model=GrupoMuscularRead)
 def actualizar_grupo_muscular(
-    grupo_muscular_id: int, grupo_in: GrupoMuscularUpdate, db: Session = Depends(get_db)
+    grupo_muscular_id: int,
+    grupo_in: GrupoMuscularUpdate,
+    usuario_actual: Usuario = Depends(require_admin),
+    db: Session = Depends(get_db),
 ) -> GrupoMuscular:
     grupo = _get_grupo_muscular_or_404(db, grupo_muscular_id)
     for campo, valor in grupo_in.model_dump(exclude_unset=True).items():
@@ -64,7 +79,11 @@ def actualizar_grupo_muscular(
 
 
 @router.delete("/{grupo_muscular_id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_grupo_muscular(grupo_muscular_id: int, db: Session = Depends(get_db)) -> None:
+def eliminar_grupo_muscular(
+    grupo_muscular_id: int,
+    usuario_actual: Usuario = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> None:
     grupo = _get_grupo_muscular_or_404(db, grupo_muscular_id)
     db.delete(grupo)
     try:

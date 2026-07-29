@@ -12,12 +12,17 @@ export function LayoutPrincipal() {
   const { usuario, logout } = useAuth()
   const location = useLocation()
 
+  const secciones =
+    usuario.rol === 'admin'
+      ? [...SECCIONES, { to: '/catalogo', etiqueta: 'Catálogo', prefijo: '/catalogo' }]
+      : SECCIONES
+
   return (
     <div>
       <div className="border-b border-border bg-surface/40">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-8 py-3">
           <nav className="flex gap-1 rounded-full border border-border bg-surface p-1">
-            {SECCIONES.map(({ to, etiqueta, prefijo }) => {
+            {secciones.map(({ to, etiqueta, prefijo }) => {
               // "Inicio" solo se marca activo en la raíz exacta; el resto se
               // marca activo para cualquier sub-ruta suya (ej. Entrenamiento
               // sigue resaltado en Rutinas/Horario/Historial).

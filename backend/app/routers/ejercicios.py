@@ -3,8 +3,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
-from app.models import Ejercicio, EjercicioGrupoMuscular, GrupoMuscular
+from app.models import Ejercicio, EjercicioGrupoMuscular, GrupoMuscular, Usuario
 from app.schemas import EjercicioCreate, EjercicioGrupoMuscularInput, EjercicioRead, EjercicioUpdate
+from app.security import get_current_user, require_admin
 
 router = APIRouter(prefix="/ejercicios", tags=["ejercicios"])
 
@@ -55,7 +56,11 @@ def _reemplazar_asociaciones(
 
 
 @router.post("/", response_model=EjercicioRead, status_code=status.HTTP_201_CREATED)
-def crear_ejercicio(ejercicio_in: EjercicioCreate, db: Session = Depends(get_db)) -> Ejercicio:
+def crear_ejercicio(
+    ejercicio_in: EjercicioCreate,
+    usuario_actual: Usuario = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> Ejercicio:
     _validar_grupos_musculares(db, ejercicio_in.grupos_musculares)
 
     ejercicio = Ejercicio(nombre=ejercicio_in.nombre, tipo=ejercicio_in.tipo)
@@ -76,7 +81,12 @@ def crear_ejercicio(ejercicio_in: EjercicioCreate, db: Session = Depends(get_db)
 
 
 @router.get("/", response_model=list[EjercicioRead])
-def listar_ejercicios(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)) -> list[Ejercicio]:
+def listar_ejercicios(
+    skip: int = 0,
+    limit: int = 100,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[Ejercicio]:
     return (
         db.query(Ejercicio)
         .options(_CARGA_GRUPOS_MUSCULARES)
@@ -87,13 +97,20 @@ def listar_ejercicios(skip: int = 0, limit: int = 100, db: Session = Depends(get
 
 
 @router.get("/{ejercicio_id}", response_model=EjercicioRead)
-def obtener_ejercicio(ejercicio_id: int, db: Session = Depends(get_db)) -> Ejercicio:
+def obtener_ejercicio(
+    ejercicio_id: int,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Ejercicio:
     return _get_ejercicio_or_404(db, ejercicio_id)
 
 
 @router.patch("/{ejercicio_id}", response_model=EjercicioRead)
 def actualizar_ejercicio(
-    ejercicio_id: int, ejercicio_in: EjercicioUpdate, db: Session = Depends(get_db)
+    ejercicio_id: int,
+    ejercicio_in: EjercicioUpdate,
+    usuario_actual: Usuario = Depends(require_admin),
+    db: Session = Depends(get_db),
 ) -> Ejercicio:
     ejercicio = _get_ejercicio_or_404(db, ejercicio_id)
 
@@ -118,7 +135,11 @@ def actualizar_ejercicio(
 
 
 @router.delete("/{ejercicio_id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_ejercicio(ejercicio_id: int, db: Session = Depends(get_db)) -> None:
+def eliminar_ejercicio(
+    ejercicio_id: int,
+    usuario_actual: Usuario = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> None:
     ejercicio = _get_ejercicio_or_404(db, ejercicio_id)
     db.query(EjercicioGrupoMuscular).filter(
         EjercicioGrupoMuscular.ejercicio_id == ejercicio.id
