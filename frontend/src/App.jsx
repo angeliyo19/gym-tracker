@@ -5,6 +5,7 @@ import { HorarioSemanalPage } from './pages/HorarioSemanalPage'
 import { CatalogoPage } from './pages/CatalogoPage'
 import { CalendarioPage } from './pages/CalendarioPage'
 import { HistorialPage } from './pages/HistorialPage'
+import { PerfilPage } from './pages/PerfilPage'
 import { SesionEnVivoPage } from './pages/SesionEnVivoPage'
 import { AlimentacionPage } from './pages/AlimentacionPage'
 import { LoginPage } from './pages/LoginPage'
@@ -50,6 +51,7 @@ function App() {
             <Route path="/entrenamiento/sesiones/:id" element={<SesionEnVivoPage />} />
             <Route path="/alimentacion" element={<AlimentacionPage />} />
             <Route path="/catalogo" element={<CatalogoPage />} />
+            <Route path="/perfil" element={<PerfilPage />} />
           </Route>
         </Route>
 

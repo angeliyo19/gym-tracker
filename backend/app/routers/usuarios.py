@@ -23,14 +23,7 @@ def actualizar_mi_perfil(
 ) -> Usuario:
     for campo, valor in usuario_in.model_dump(exclude_unset=True).items():
         setattr(usuario_actual, campo, valor)
-    try:
-        db.commit()
-    except IntegrityError as exc:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Ya existe un usuario con ese email",
-        ) from exc
+    db.commit()
     db.refresh(usuario_actual)
     return usuario_actual
 

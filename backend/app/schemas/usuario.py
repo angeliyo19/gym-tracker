@@ -12,8 +12,11 @@ class UsuarioBase(BaseModel):
 
 
 class UsuarioUpdate(BaseModel):
+    # email deliberadamente fuera de aquí (igual que rol): no debe poder
+    # cambiarse desde PATCH /usuarios/me. Cambiar el email de login es una
+    # operación sensible (afecta a cómo se identifica al usuario) que
+    # requeriría su propio flujo de verificación más adelante.
     nombre: str | None = None
-    email: EmailStr | None = None
     edad: int | None = None
     peso: float | None = None
     altura: float | None = None

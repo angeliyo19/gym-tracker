@@ -43,7 +43,12 @@ export function LayoutPrincipal() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <span className="text-sm text-ink-muted">Hola, {usuario.nombre}</span>
+            <Link
+              to="/perfil"
+              className="inline-flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+            >
+              Hola, {usuario.nombre}
+            </Link>
             <Button variant="ghostDanger" onClick={logout}>
               Cerrar sesión
             </Button>

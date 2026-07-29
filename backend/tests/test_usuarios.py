@@ -28,6 +28,17 @@ def test_actualizar_mi_perfil_parcial(client: TestClient) -> None:
     assert cuerpo["peso"] == 80
 
 
+def test_actualizar_mi_perfil_no_permite_cambiar_email(client: TestClient) -> None:
+    usuario, headers = crear_usuario_autenticado(client)
+
+    respuesta = client.patch(
+        "/api/v1/usuarios/me", json={"email": "otro@example.com"}, headers=headers
+    )
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["email"] == usuario["email"]
+
+
 def test_nuevo_usuario_tiene_rol_usuario_por_defecto(client: TestClient) -> None:
     usuario, _ = crear_usuario_autenticado(client)
 
