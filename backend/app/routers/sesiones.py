@@ -4,7 +4,13 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models import Serie, SesionEntrenamiento, Usuario
 from app.routers.rutinas import _get_rutina_or_404, construir_ultimas_series
-from app.schemas import RutinaRead, SeriesPorEjercicio, SesionDetalleRead, SesionEntrenamientoRead
+from app.schemas import (
+    RutinaRead,
+    SeriesPorEjercicio,
+    SesionDetalleRead,
+    SesionEntrenamientoRead,
+    SesionEntrenamientoUpdate,
+)
 from app.security import get_current_user
 
 router = APIRouter(prefix="/sesiones", tags=["sesiones"])
@@ -78,6 +84,28 @@ def obtener_sesion(
         ultimas_series=ultimas_series,
         series_registradas=series_registradas,
     )
+
+
+@router.patch("/{sesion_id}", response_model=SesionEntrenamientoRead)
+def actualizar_sesion(
+    sesion_id: int,
+    sesion_in: SesionEntrenamientoUpdate,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SesionEntrenamiento:
+    """Cambia la rutina de una sesión concreta (ej. desde el calendario), sin
+    afectar al patrón semanal de RutinaProgramada que la generó."""
+    sesion = _get_sesion_or_404(db, sesion_id, usuario_actual.id)
+
+    datos = sesion_in.model_dump(exclude_unset=True)
+    if "rutina_id" in datos:
+        _get_rutina_or_404(db, datos["rutina_id"], usuario_actual.id)
+    for campo, valor in datos.items():
+        setattr(sesion, campo, valor)
+
+    db.commit()
+    db.refresh(sesion)
+    return sesion
 
 
 @router.post("/{sesion_id}/finalizar", response_model=SesionEntrenamientoRead)

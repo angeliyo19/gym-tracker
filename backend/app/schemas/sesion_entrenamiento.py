@@ -17,6 +17,10 @@ class SesionEntrenamientoRead(BaseModel):
     completada: bool
 
 
+class SesionEntrenamientoUpdate(BaseModel):
+    rutina_id: int | None = None
+
+
 class UltimaSerieRef(BaseModel):
     ejercicio_id: int
     peso: float

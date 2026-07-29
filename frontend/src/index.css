@@ -14,6 +14,10 @@
   --accent: #ea5b32;
   --accent-hover: #d14a24;
   --accent-foreground: #fff8f3;
+  --success: #16a34a;
+  --success-foreground: #f0fdf4;
+  --pendiente: #a8a29e;
+  --pendiente-foreground: #1c1917;
 }
 
 .dark {
@@ -26,6 +30,10 @@
   --accent: #ff7a45;
   --accent-hover: #ff8f5f;
   --accent-foreground: #1b0d06;
+  --success: #4ade80;
+  --success-foreground: #06280f;
+  --pendiente: #57534e;
+  --pendiente-foreground: #f3eee7;
 }
 
 @theme inline {
@@ -38,6 +46,10 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-pendiente: var(--pendiente);
+  --color-pendiente-foreground: var(--pendiente-foreground);
 
   --font-heading: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
   --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
@@ -50,4 +62,48 @@ body {
   transition:
     background-color 150ms ease,
     color 150ms ease;
+}
+
+/* Reskin de FullCalendar para que use la misma paleta y tipografía que el
+   resto de la app, en vez de sus estilos por defecto. */
+.calendario-tema {
+  --fc-page-bg-color: var(--surface);
+  --fc-neutral-bg-color: var(--surface-hover);
+  --fc-neutral-text-color: var(--ink-muted);
+  --fc-border-color: var(--border);
+  --fc-button-text-color: var(--ink);
+  --fc-button-bg-color: var(--surface);
+  --fc-button-border-color: var(--border);
+  --fc-button-hover-bg-color: var(--surface-hover);
+  --fc-button-hover-border-color: var(--border);
+  --fc-button-active-bg-color: var(--accent);
+  --fc-button-active-border-color: var(--accent);
+  --fc-today-bg-color: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+.calendario-tema .fc-toolbar-title {
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  color: var(--ink);
+}
+
+.calendario-tema .fc-button-primary:not(:disabled).fc-button-active,
+.calendario-tema .fc-button-primary:not(:disabled):active {
+  color: var(--accent-foreground);
+}
+
+.calendario-tema .fc-daygrid-day-number,
+.calendario-tema .fc-col-header-cell-cushion {
+  color: var(--ink);
+}
+
+.calendario-tema .fc-daygrid-event,
+.calendario-tema .fc-timegrid-event {
+  border: none;
+  border-radius: 0.375rem;
+  padding: 1px 4px;
+  font-weight: 500;
+  cursor: pointer;
 }

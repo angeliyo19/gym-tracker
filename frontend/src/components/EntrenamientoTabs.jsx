@@ -2,6 +2,8 @@ import { NavLink } from 'react-router-dom'
 
 const PESTAÑAS = [
   { to: '/entrenamiento/rutinas', etiqueta: 'Rutinas' },
+  { to: '/entrenamiento/horario', etiqueta: 'Horario' },
+  { to: '/entrenamiento/calendario', etiqueta: 'Calendario' },
   { to: '/entrenamiento/historial', etiqueta: 'Historial' },
 ]
 

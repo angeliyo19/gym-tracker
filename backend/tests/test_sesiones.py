@@ -173,6 +173,97 @@ def test_obtener_sesion_sin_token(client: TestClient) -> None:
     assert respuesta.status_code == 401
 
 
+def test_actualizar_sesion_cambia_rutina(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    rutina_1 = _crear_rutina(client, headers, nombre="Push day")
+    rutina_2 = _crear_rutina(client, headers, nombre="Pull day")
+    sesion = _iniciar_rutina(client, rutina_1["id"], headers)
+
+    respuesta = client.patch(
+        f"/api/v1/sesiones/{sesion['id']}", json={"rutina_id": rutina_2["id"]}, headers=headers
+    )
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert cuerpo["rutina_id"] == rutina_2["id"]
+    assert cuerpo["fecha"] == sesion["fecha"]
+    assert cuerpo["completada"] is False
+
+
+def test_actualizar_sesion_no_afecta_otras_sesiones(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    rutina_1 = _crear_rutina(client, headers, nombre="Push day")
+    rutina_2 = _crear_rutina(client, headers, nombre="Pull day")
+    sesion_1 = _iniciar_rutina(client, rutina_1["id"], headers)
+    sesion_2 = _iniciar_rutina(client, rutina_1["id"], headers)
+
+    client.patch(
+        f"/api/v1/sesiones/{sesion_1['id']}", json={"rutina_id": rutina_2["id"]}, headers=headers
+    )
+
+    respuesta = client.get(f"/api/v1/sesiones/{sesion_2['id']}", headers=headers)
+    assert respuesta.json()["rutina_id"] == rutina_1["id"]
+
+
+def test_actualizar_sesion_rutina_inexistente(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    rutina = _crear_rutina(client, headers)
+    sesion = _iniciar_rutina(client, rutina["id"], headers)
+
+    respuesta = client.patch(
+        f"/api/v1/sesiones/{sesion['id']}", json={"rutina_id": 999999}, headers=headers
+    )
+
+    assert respuesta.status_code == 404
+
+
+def test_actualizar_sesion_rutina_de_otro_usuario(client: TestClient) -> None:
+    _, headers_1 = crear_usuario_autenticado(client)
+    _, headers_2 = crear_usuario_autenticado(client)
+    rutina_1 = _crear_rutina(client, headers_1)
+    rutina_2 = _crear_rutina(client, headers_2)
+    sesion = _iniciar_rutina(client, rutina_1["id"], headers_1)
+
+    respuesta = client.patch(
+        f"/api/v1/sesiones/{sesion['id']}", json={"rutina_id": rutina_2["id"]}, headers=headers_1
+    )
+
+    assert respuesta.status_code == 404
+
+
+def test_actualizar_sesion_de_otro_usuario(client: TestClient) -> None:
+    _, headers_1 = crear_usuario_autenticado(client)
+    _, headers_2 = crear_usuario_autenticado(client)
+    rutina = _crear_rutina(client, headers_1)
+    sesion = _iniciar_rutina(client, rutina["id"], headers_1)
+
+    respuesta = client.patch(
+        f"/api/v1/sesiones/{sesion['id']}", json={"rutina_id": rutina["id"]}, headers=headers_2
+    )
+
+    assert respuesta.status_code == 404
+
+
+def test_actualizar_sesion_inexistente(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+
+    respuesta = client.patch(
+        "/api/v1/sesiones/999999", json={"rutina_id": 1}, headers=headers
+    )
+
+    assert respuesta.status_code == 404
+
+
+def test_actualizar_sesion_sin_token(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    rutina = _crear_rutina(client, headers)
+    sesion = _iniciar_rutina(client, rutina["id"], headers)
+
+    respuesta = client.patch(f"/api/v1/sesiones/{sesion['id']}", json={"rutina_id": rutina["id"]})
+
+    assert respuesta.status_code == 401
+
+
 def test_finalizar_sesion(client: TestClient) -> None:
     _, headers = crear_usuario_autenticado(client)
     rutina = _crear_rutina(client, headers)

@@ -45,6 +45,7 @@ from app.schemas.sesion_entrenamiento import (
     SeriesPorEjercicio,
     SesionDetalleRead,
     SesionEntrenamientoRead,
+    SesionEntrenamientoUpdate,
     UltimaSerieRef,
 )
 from app.schemas.usuario import UsuarioRead, UsuarioUpdate
@@ -71,6 +72,7 @@ __all__ = [
     "RutinaResumen",
     "SesionCalendarioRead",
     "SesionEntrenamientoRead",
+    "SesionEntrenamientoUpdate",
     "UltimaSerieRef",
     "IniciarRutinaRead",
     "SesionDetalleRead",
