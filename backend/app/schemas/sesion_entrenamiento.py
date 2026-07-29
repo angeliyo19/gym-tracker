@@ -3,6 +3,7 @@ from datetime import date
 from pydantic import BaseModel, ConfigDict
 
 from app.schemas.rutina import RutinaRead
+from app.schemas.serie import SerieRead
 
 
 class SesionEntrenamientoRead(BaseModel):
@@ -27,6 +28,12 @@ class IniciarRutinaRead(SesionEntrenamientoRead):
     ultimas_series: list[UltimaSerieRef]
 
 
+class SeriesPorEjercicio(BaseModel):
+    ejercicio_id: int
+    series: list[SerieRead]
+
+
 class SesionDetalleRead(SesionEntrenamientoRead):
     rutina: RutinaRead
     ultimas_series: list[UltimaSerieRef]
+    series_registradas: list[SeriesPorEjercicio]

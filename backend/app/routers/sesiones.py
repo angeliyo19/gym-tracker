@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models import SesionEntrenamiento, Usuario
+from app.models import Serie, SesionEntrenamiento, Usuario
 from app.routers.rutinas import _get_rutina_or_404, construir_ultimas_series
-from app.schemas import RutinaRead, SesionDetalleRead, SesionEntrenamientoRead
+from app.schemas import RutinaRead, SeriesPorEjercicio, SesionDetalleRead, SesionEntrenamientoRead
 from app.security import get_current_user
 
 router = APIRouter(prefix="/sesiones", tags=["sesiones"])
@@ -23,6 +23,35 @@ def _get_sesion_or_404(db: Session, sesion_id: int, usuario_id: int) -> SesionEn
     return sesion
 
 
+def _agrupar_series_por_ejercicio(series: list[Serie]) -> list[SeriesPorEjercicio]:
+    agrupadas: dict[int, list[Serie]] = {}
+    for serie in series:
+        agrupadas.setdefault(serie.ejercicio_id, []).append(serie)
+    return [
+        SeriesPorEjercicio(ejercicio_id=ejercicio_id, series=series_del_ejercicio)
+        for ejercicio_id, series_del_ejercicio in agrupadas.items()
+    ]
+
+
+@router.get("/", response_model=list[SesionEntrenamientoRead])
+def listar_sesiones(
+    rutina_id: int | None = None,
+    skip: int = 0,
+    limit: int = 100,
+    usuario_actual: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[SesionEntrenamiento]:
+    query = db.query(SesionEntrenamiento).filter(SesionEntrenamiento.usuario_id == usuario_actual.id)
+    if rutina_id is not None:
+        query = query.filter(SesionEntrenamiento.rutina_id == rutina_id)
+    return (
+        query.order_by(SesionEntrenamiento.fecha.desc(), SesionEntrenamiento.id.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
 @router.get("/{sesion_id}", response_model=SesionDetalleRead)
 def obtener_sesion(
     sesion_id: int,
@@ -35,6 +64,9 @@ def obtener_sesion(
     ejercicio_ids = {asociacion.ejercicio_id for asociacion in rutina.ejercicios}
     ultimas_series = construir_ultimas_series(db, usuario_actual.id, ejercicio_ids)
 
+    series = db.query(Serie).filter(Serie.sesion_id == sesion.id).order_by(Serie.id).all()
+    series_registradas = _agrupar_series_por_ejercicio(series)
+
     return SesionDetalleRead(
         id=sesion.id,
         usuario_id=sesion.usuario_id,
@@ -44,6 +76,7 @@ def obtener_sesion(
         completada=sesion.completada,
         rutina=RutinaRead.model_validate(rutina),
         ultimas_series=ultimas_series,
+        series_registradas=series_registradas,
     )
 
 

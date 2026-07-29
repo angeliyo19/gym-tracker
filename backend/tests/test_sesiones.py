@@ -49,6 +49,7 @@ def test_obtener_sesion(client: TestClient) -> None:
     assert len(cuerpo["rutina"]["ejercicios"]) == 1
     assert cuerpo["rutina"]["ejercicios"][0]["ejercicio"]["nombre"] == "Press banca"
     assert cuerpo["ultimas_series"] == []
+    assert cuerpo["series_registradas"] == []
 
 
 def test_obtener_sesion_incluye_ultima_serie_por_ejercicio(client: TestClient) -> None:
@@ -76,6 +77,71 @@ def test_obtener_sesion_incluye_ultima_serie_por_ejercicio(client: TestClient) -
     assert referencia["ejercicio_id"] == press["id"]
     assert referencia["peso"] == 80.0
     assert referencia["repeticiones"] == 8
+
+
+def test_obtener_sesion_incluye_series_ya_registradas_agrupadas_por_ejercicio(
+    client: TestClient,
+) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    press = _crear_ejercicio(client, "Press banca")
+    remo = _crear_ejercicio(client, "Remo")
+    rutina = _crear_rutina(
+        client,
+        headers,
+        ejercicios=[
+            {"ejercicio_id": press["id"], "orden": 1, "series_objetivo": 3, "repeticiones_objetivo": 8},
+            {"ejercicio_id": remo["id"], "orden": 2, "series_objetivo": 3, "repeticiones_objetivo": 8},
+        ],
+    )
+    sesion = _iniciar_rutina(client, rutina["id"], headers)
+    client.post(
+        f"/api/v1/sesiones/{sesion['id']}/series/",
+        json={"ejercicio_id": press["id"], "peso": 80.0, "repeticiones": 8},
+        headers=headers,
+    )
+    client.post(
+        f"/api/v1/sesiones/{sesion['id']}/series/",
+        json={"ejercicio_id": press["id"], "peso": 82.5, "repeticiones": 6},
+        headers=headers,
+    )
+    client.post(
+        f"/api/v1/sesiones/{sesion['id']}/series/",
+        json={"ejercicio_id": remo["id"], "peso": 60.0, "repeticiones": 10},
+        headers=headers,
+    )
+
+    respuesta = client.get(f"/api/v1/sesiones/{sesion['id']}", headers=headers)
+
+    assert respuesta.status_code == 200
+    grupos = {grupo["ejercicio_id"]: grupo["series"] for grupo in respuesta.json()["series_registradas"]}
+    assert len(grupos) == 2
+    assert [s["peso"] for s in grupos[press["id"]]] == [80.0, 82.5]
+    assert [s["repeticiones"] for s in grupos[press["id"]]] == [8, 6]
+    assert [s["peso"] for s in grupos[remo["id"]]] == [60.0]
+
+
+def test_obtener_sesion_no_incluye_series_de_otra_sesion(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    press = _crear_ejercicio(client, "Press banca")
+    rutina = _crear_rutina(
+        client,
+        headers,
+        ejercicios=[
+            {"ejercicio_id": press["id"], "orden": 1, "series_objetivo": 3, "repeticiones_objetivo": 8}
+        ],
+    )
+    primera_sesion = _iniciar_rutina(client, rutina["id"], headers)
+    client.post(
+        f"/api/v1/sesiones/{primera_sesion['id']}/series/",
+        json={"ejercicio_id": press["id"], "peso": 80.0, "repeticiones": 8},
+        headers=headers,
+    )
+    segunda_sesion = _iniciar_rutina(client, rutina["id"], headers)
+
+    respuesta = client.get(f"/api/v1/sesiones/{segunda_sesion['id']}", headers=headers)
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["series_registradas"] == []
 
 
 def test_obtener_sesion_de_otro_usuario(client: TestClient) -> None:
@@ -157,5 +223,71 @@ def test_finalizar_sesion_sin_token(client: TestClient) -> None:
     sesion = _iniciar_rutina(client, rutina["id"], headers)
 
     respuesta = client.post(f"/api/v1/sesiones/{sesion['id']}/finalizar")
+
+    assert respuesta.status_code == 401
+
+
+def test_listar_sesiones(client: TestClient) -> None:
+    usuario, headers = crear_usuario_autenticado(client)
+    rutina = _crear_rutina(client, headers)
+    sesion_1 = _iniciar_rutina(client, rutina["id"], headers)
+    sesion_2 = _iniciar_rutina(client, rutina["id"], headers)
+
+    respuesta = client.get("/api/v1/sesiones/", headers=headers)
+
+    assert respuesta.status_code == 200
+    ids = {sesion["id"] for sesion in respuesta.json()}
+    assert ids == {sesion_1["id"], sesion_2["id"]}
+    assert all(sesion["usuario_id"] == usuario["id"] for sesion in respuesta.json())
+
+
+def test_listar_sesiones_ordenadas_por_fecha_descendente(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    rutina = _crear_rutina(client, headers)
+    sesion_1 = _iniciar_rutina(client, rutina["id"], headers)
+    sesion_2 = _iniciar_rutina(client, rutina["id"], headers)
+    sesion_3 = _iniciar_rutina(client, rutina["id"], headers)
+
+    respuesta = client.get("/api/v1/sesiones/", headers=headers)
+
+    assert respuesta.status_code == 200
+    ids_en_orden = [sesion["id"] for sesion in respuesta.json()]
+    # Todas se crean el mismo día en el test, así que el desempate es por id
+    # descendente (la más reciente primero).
+    assert ids_en_orden == [sesion_3["id"], sesion_2["id"], sesion_1["id"]]
+
+
+def test_listar_sesiones_filtra_por_rutina_id(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    rutina_1 = _crear_rutina(client, headers, nombre="Push day")
+    rutina_2 = _crear_rutina(client, headers, nombre="Pull day")
+    sesion_1 = _iniciar_rutina(client, rutina_1["id"], headers)
+    _iniciar_rutina(client, rutina_2["id"], headers)
+
+    respuesta = client.get(f"/api/v1/sesiones/?rutina_id={rutina_1['id']}", headers=headers)
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert len(cuerpo) == 1
+    assert cuerpo[0]["id"] == sesion_1["id"]
+
+
+def test_listar_sesiones_no_incluye_las_de_otro_usuario(client: TestClient) -> None:
+    _, headers_1 = crear_usuario_autenticado(client)
+    _, headers_2 = crear_usuario_autenticado(client)
+    rutina_1 = _crear_rutina(client, headers_1)
+    rutina_2 = _crear_rutina(client, headers_2)
+    sesion_1 = _iniciar_rutina(client, rutina_1["id"], headers_1)
+    _iniciar_rutina(client, rutina_2["id"], headers_2)
+
+    respuesta = client.get("/api/v1/sesiones/", headers=headers_1)
+
+    assert respuesta.status_code == 200
+    ids = [sesion["id"] for sesion in respuesta.json()]
+    assert ids == [sesion_1["id"]]
+
+
+def test_listar_sesiones_sin_token(client: TestClient) -> None:
+    respuesta = client.get("/api/v1/sesiones/")
 
     assert respuesta.status_code == 401
