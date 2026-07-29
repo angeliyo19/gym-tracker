@@ -10,6 +10,7 @@ from app.models.registro_estado_animo import RegistroEstadoAnimo
 from app.models.registro_peso import RegistroPeso
 from app.models.rutina import Rutina
 from app.models.rutina_ejercicio import RutinaEjercicio
+from app.models.rutina_programada import RutinaProgramada
 from app.models.serie import Serie
 from app.models.sesion_entrenamiento import SesionEntrenamiento
 from app.models.usuario import Usuario
@@ -22,6 +23,7 @@ __all__ = [
     "EjercicioGrupoMuscular",
     "Rutina",
     "RutinaEjercicio",
+    "RutinaProgramada",
     "SesionEntrenamiento",
     "Serie",
     "Comida",

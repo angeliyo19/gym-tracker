@@ -1,4 +1,5 @@
 from app.schemas.auth import Token, UsuarioRegistro
+from app.schemas.calendario import RutinaResumen, SesionCalendarioRead
 from app.schemas.comida import ComidaCreate, ComidaRead, ComidaUpdate
 from app.schemas.ejercicio import (
     EjercicioCreate,
@@ -33,6 +34,11 @@ from app.schemas.rutina import (
     RutinaRead,
     RutinaUpdate,
 )
+from app.schemas.rutina_programada import (
+    RutinaProgramadaCreate,
+    RutinaProgramadaRead,
+    RutinaProgramadaUpdate,
+)
 from app.schemas.serie import SerieCreate, SerieRead, SerieUpdate
 from app.schemas.sesion_entrenamiento import (
     IniciarRutinaRead,
@@ -59,6 +65,11 @@ __all__ = [
     "RutinaRead",
     "RutinaEjercicioInput",
     "RutinaEjercicioRead",
+    "RutinaProgramadaCreate",
+    "RutinaProgramadaUpdate",
+    "RutinaProgramadaRead",
+    "RutinaResumen",
+    "SesionCalendarioRead",
     "SesionEntrenamientoRead",
     "UltimaSerieRef",
     "IniciarRutinaRead",

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from app.models.registro_estado_animo import RegistroEstadoAnimo
     from app.models.registro_peso import RegistroPeso
     from app.models.rutina import Rutina
+    from app.models.rutina_programada import RutinaProgramada
     from app.models.sesion_entrenamiento import SesionEntrenamiento
 
 
@@ -41,5 +42,8 @@ class Usuario(Base):
         back_populates="usuario", passive_deletes="all"
     )
     registros_estado_animo: Mapped[list["RegistroEstadoAnimo"]] = relationship(
+        back_populates="usuario", passive_deletes="all"
+    )
+    rutinas_programadas: Mapped[list["RutinaProgramada"]] = relationship(
         back_populates="usuario", passive_deletes="all"
     )

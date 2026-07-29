@@ -7,6 +7,7 @@ from app.models.base import Base
 
 if TYPE_CHECKING:
     from app.models.rutina_ejercicio import RutinaEjercicio
+    from app.models.rutina_programada import RutinaProgramada
     from app.models.sesion_entrenamiento import SesionEntrenamiento
     from app.models.usuario import Usuario
 
@@ -23,5 +24,8 @@ class Rutina(Base):
         back_populates="rutina", passive_deletes="all"
     )
     sesiones: Mapped[list["SesionEntrenamiento"]] = relationship(
+        back_populates="rutina", passive_deletes="all"
+    )
+    rutinas_programadas: Mapped[list["RutinaProgramada"]] = relationship(
         back_populates="rutina", passive_deletes="all"
     )

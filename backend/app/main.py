@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers.auth import router as auth_router
+from app.routers.calendario import router as calendario_router
 from app.routers.comidas import router as comidas_router
 from app.routers.ejercicios import router as ejercicios_router
 from app.routers.grupos_musculares import router as grupos_musculares_router
@@ -11,6 +12,7 @@ from app.routers.registros_alimentacion import router as registros_alimentacion_
 from app.routers.registros_estado_animo import router as registros_estado_animo_router
 from app.routers.registros_peso import router as registros_peso_router
 from app.routers.rutinas import router as rutinas_router
+from app.routers.rutinas_programadas import router as rutinas_programadas_router
 from app.routers.series import router as series_router
 from app.routers.sesiones import router as sesiones_router
 from app.routers.usuarios import router as usuarios_router
@@ -30,8 +32,10 @@ app.include_router(usuarios_router, prefix="/api/v1")
 app.include_router(ejercicios_router, prefix="/api/v1")
 app.include_router(grupos_musculares_router, prefix="/api/v1")
 app.include_router(rutinas_router, prefix="/api/v1")
+app.include_router(rutinas_programadas_router, prefix="/api/v1")
 app.include_router(series_router, prefix="/api/v1")
 app.include_router(sesiones_router, prefix="/api/v1")
+app.include_router(calendario_router, prefix="/api/v1")
 app.include_router(comidas_router, prefix="/api/v1")
 app.include_router(planes_alimentacion_router, prefix="/api/v1")
 app.include_router(registros_alimentacion_router, prefix="/api/v1")
