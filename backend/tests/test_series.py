@@ -13,8 +13,21 @@ def _crear_ejercicio(client: TestClient, nombre: str = "Press banca") -> dict:
 
 def _crear_sesion(client: TestClient) -> tuple[dict, dict]:
     _, headers = crear_usuario_autenticado(client)
+    ejercicio_de_la_rutina = _crear_ejercicio(client, "Sentadilla")
     respuesta_rutina = client.post(
-        "/api/v1/rutinas/", json={"nombre": "Push day", "ejercicios": []}, headers=headers
+        "/api/v1/rutinas/",
+        json={
+            "nombre": "Push day",
+            "ejercicios": [
+                {
+                    "ejercicio_id": ejercicio_de_la_rutina["id"],
+                    "orden": 1,
+                    "series_objetivo": 3,
+                    "repeticiones_objetivo": 10,
+                }
+            ],
+        },
+        headers=headers,
     )
     assert respuesta_rutina.status_code == 201
     rutina = respuesta_rutina.json()
@@ -52,6 +65,48 @@ def test_crear_serie(client: TestClient) -> None:
     assert cuerpo["ejercicio_id"] == ejercicio["id"]
     assert cuerpo["peso"] == 80.0
     assert cuerpo["repeticiones"] == 8
+
+
+def test_crear_serie_fija_hora_inicio_de_la_sesion(client: TestClient) -> None:
+    sesion, headers = _crear_sesion(client)
+    ejercicio = _crear_ejercicio(client)
+    assert sesion["hora_inicio"] is None
+
+    client.post(
+        f"/api/v1/sesiones/{sesion['id']}/series/",
+        json={"ejercicio_id": ejercicio["id"], "peso": 80.0, "repeticiones": 8},
+        headers=headers,
+    )
+
+    respuesta = client.get(f"/api/v1/sesiones/{sesion['id']}", headers=headers)
+    cuerpo = respuesta.json()
+    assert cuerpo["hora_inicio"] is not None
+    assert cuerpo["hora_fin"] is None
+
+
+def test_crear_segunda_serie_no_sobrescribe_hora_inicio(client: TestClient) -> None:
+    sesion, headers = _crear_sesion(client)
+    ejercicio = _crear_ejercicio(client)
+
+    client.post(
+        f"/api/v1/sesiones/{sesion['id']}/series/",
+        json={"ejercicio_id": ejercicio["id"], "peso": 80.0, "repeticiones": 8},
+        headers=headers,
+    )
+    hora_inicio_tras_primera = client.get(
+        f"/api/v1/sesiones/{sesion['id']}", headers=headers
+    ).json()["hora_inicio"]
+
+    client.post(
+        f"/api/v1/sesiones/{sesion['id']}/series/",
+        json={"ejercicio_id": ejercicio["id"], "peso": 82.5, "repeticiones": 6},
+        headers=headers,
+    )
+    hora_inicio_tras_segunda = client.get(
+        f"/api/v1/sesiones/{sesion['id']}", headers=headers
+    ).json()["hora_inicio"]
+
+    assert hora_inicio_tras_primera == hora_inicio_tras_segunda
 
 
 def test_crear_serie_sin_token(client: TestClient) -> None:

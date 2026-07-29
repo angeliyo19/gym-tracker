@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -46,8 +48,11 @@ def crear_serie(
     usuario_actual: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Serie:
-    _get_sesion_or_404(db, sesion_id, usuario_actual.id)
+    sesion = _get_sesion_or_404(db, sesion_id, usuario_actual.id)
     _validar_ejercicio(db, serie_in.ejercicio_id)
+
+    if sesion.hora_inicio is None:
+        sesion.hora_inicio = datetime.now(timezone.utc)
 
     serie = Serie(sesion_id=sesion_id, **serie_in.model_dump())
     db.add(serie)

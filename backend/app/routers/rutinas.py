@@ -80,6 +80,11 @@ def crear_rutina(
     usuario_actual: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Rutina:
+    if not rutina_in.ejercicios:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La rutina debe tener al menos un ejercicio",
+        )
     _validar_ejercicios(db, rutina_in.ejercicios)
 
     rutina = Rutina(usuario_id=usuario_actual.id, nombre=rutina_in.nombre)
@@ -234,5 +239,7 @@ def iniciar_rutina(
         fecha=sesion.fecha,
         notas=sesion.notas,
         completada=sesion.completada,
+        hora_inicio=sesion.hora_inicio,
+        hora_fin=sesion.hora_fin,
         ultimas_series=ultimas_series,
     )

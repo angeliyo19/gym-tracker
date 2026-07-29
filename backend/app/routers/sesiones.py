@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -51,7 +53,11 @@ def listar_sesiones(
     if rutina_id is not None:
         query = query.filter(SesionEntrenamiento.rutina_id == rutina_id)
     return (
-        query.order_by(SesionEntrenamiento.fecha.desc(), SesionEntrenamiento.id.desc())
+        query.order_by(
+            SesionEntrenamiento.fecha.desc(),
+            SesionEntrenamiento.hora_inicio.desc().nullslast(),
+            SesionEntrenamiento.id.desc(),
+        )
         .offset(skip)
         .limit(limit)
         .all()
@@ -80,6 +86,8 @@ def obtener_sesion(
         fecha=sesion.fecha,
         notas=sesion.notas,
         completada=sesion.completada,
+        hora_inicio=sesion.hora_inicio,
+        hora_fin=sesion.hora_fin,
         rutina=RutinaRead.model_validate(rutina),
         ultimas_series=ultimas_series,
         series_registradas=series_registradas,
@@ -122,6 +130,14 @@ def finalizar_sesion(
 ) -> SesionEntrenamiento:
     """Marca la sesión como completada. Idempotente: si ya lo estaba, no es un error."""
     sesion = _get_sesion_or_404(db, sesion_id, usuario_actual.id)
+    if sesion.hora_fin is None:
+        ahora = datetime.now(timezone.utc)
+        sesion.hora_fin = ahora
+        # Caso extremo: sesión finalizada sin haber registrado ninguna serie,
+        # por lo que hora_inicio nunca llegó a fijarse. Se iguala a hora_fin
+        # para no dejar el dato incoherente (fin sin inicio).
+        if sesion.hora_inicio is None:
+            sesion.hora_inicio = ahora
     sesion.completada = True
     db.commit()
     db.refresh(sesion)

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -15,6 +15,8 @@ class SesionEntrenamientoRead(BaseModel):
     fecha: date
     notas: str | None
     completada: bool
+    hora_inicio: datetime | None
+    hora_fin: datetime | None
 
 
 class SesionEntrenamientoUpdate(BaseModel):

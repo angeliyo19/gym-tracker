@@ -3,8 +3,26 @@ from fastapi.testclient import TestClient
 from tests.conftest import crear_usuario_autenticado
 
 
+def _crear_ejercicio(client: TestClient, nombre: str = "Press banca") -> dict:
+    respuesta = client.post(
+        "/api/v1/ejercicios/", json={"nombre": nombre, "tipo": "compuesto", "grupos_musculares": []}
+    )
+    assert respuesta.status_code == 201
+    return respuesta.json()
+
+
 def _crear_rutina(client: TestClient, headers: dict, **overrides) -> dict:
-    payload = {"nombre": "Push day", "ejercicios": []}
+    payload = {"nombre": "Push day"}
+    if "ejercicios" not in overrides:
+        ejercicio = _crear_ejercicio(client)
+        payload["ejercicios"] = [
+            {
+                "ejercicio_id": ejercicio["id"],
+                "orden": 1,
+                "series_objetivo": 3,
+                "repeticiones_objetivo": 10,
+            }
+        ]
     payload.update(overrides)
     respuesta = client.post("/api/v1/rutinas/", json=payload, headers=headers)
     assert respuesta.status_code == 201

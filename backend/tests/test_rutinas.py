@@ -14,25 +14,31 @@ def _crear_ejercicio(client: TestClient, nombre: str = "Press banca") -> dict:
 
 
 def _crear_rutina(client: TestClient, headers: dict, **overrides) -> dict:
-    payload = {"nombre": "Push day", "ejercicios": []}
+    payload = {"nombre": "Push day"}
+    if "ejercicios" not in overrides:
+        ejercicio = _crear_ejercicio(client)
+        payload["ejercicios"] = [
+            {
+                "ejercicio_id": ejercicio["id"],
+                "orden": 1,
+                "series_objetivo": 3,
+                "repeticiones_objetivo": 10,
+            }
+        ]
     payload.update(overrides)
     respuesta = client.post("/api/v1/rutinas/", json=payload, headers=headers)
     assert respuesta.status_code == 201
     return respuesta.json()
 
 
-def test_crear_rutina_sin_ejercicios(client: TestClient) -> None:
-    usuario, headers = crear_usuario_autenticado(client)
+def test_crear_rutina_sin_ejercicios_devuelve_400(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
 
     respuesta = client.post(
         "/api/v1/rutinas/", json={"nombre": "Push day", "ejercicios": []}, headers=headers
     )
 
-    assert respuesta.status_code == 201
-    cuerpo = respuesta.json()
-    assert cuerpo["nombre"] == "Push day"
-    assert cuerpo["usuario_id"] == usuario["id"]
-    assert cuerpo["ejercicios"] == []
+    assert respuesta.status_code == 400
 
 
 def test_crear_rutina_sin_token(client: TestClient) -> None:
@@ -247,6 +253,8 @@ def test_iniciar_rutina(client: TestClient) -> None:
     assert cuerpo["fecha"] == date.today().isoformat()
     assert cuerpo["completada"] is False
     assert cuerpo["ultimas_series"] == []
+    assert cuerpo["hora_inicio"] is None
+    assert cuerpo["hora_fin"] is None
 
 
 def test_iniciar_rutina_incluye_ultima_serie_por_ejercicio(client: TestClient) -> None:

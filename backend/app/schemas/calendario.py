@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -16,4 +16,6 @@ class SesionCalendarioRead(BaseModel):
     id: int
     fecha: date
     completada: bool
+    hora_inicio: datetime | None
+    hora_fin: datetime | None
     rutina: RutinaResumen

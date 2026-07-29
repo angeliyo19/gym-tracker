@@ -6,7 +6,7 @@ import { EntrenamientoTabs } from '../components/EntrenamientoTabs'
 import { Card } from '../components/ui/Card'
 import { EmptyState } from '../components/ui/EmptyState'
 import { PageHeader } from '../components/ui/PageHeader'
-import { formatearFecha } from '../utils/fecha'
+import { formatearDuracion, formatearFecha } from '../utils/fecha'
 
 export function HistorialPage() {
   const navigate = useNavigate()
@@ -49,30 +49,36 @@ export function HistorialPage() {
 
       {!cargando && !error && sesiones.length > 0 && (
         <Card className="mt-6 divide-y divide-border overflow-hidden">
-          {sesiones.map((sesion) => (
-            <button
-              key={sesion.id}
-              type="button"
-              onClick={() => navigate(`/entrenamiento/sesiones/${sesion.id}`)}
-              className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-surface-hover"
-            >
-              <div>
-                <span className="font-medium text-ink">
-                  {rutinasPorId[sesion.rutina_id]?.nombre ?? 'Rutina eliminada'}
-                </span>
-                <p className="text-xs text-ink-muted">{formatearFecha(sesion.fecha)}</p>
-              </div>
-              <span
-                className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${
-                  sesion.completada
-                    ? 'bg-accent/10 text-accent'
-                    : 'border border-border text-ink-muted'
-                }`}
+          {sesiones.map((sesion) => {
+            const duracion = formatearDuracion(sesion.hora_inicio, sesion.hora_fin)
+            return (
+              <button
+                key={sesion.id}
+                type="button"
+                onClick={() => navigate(`/entrenamiento/sesiones/${sesion.id}`)}
+                className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-surface-hover"
               >
-                {sesion.completada ? '✓ Completada' : 'En progreso'}
-              </span>
-            </button>
-          ))}
+                <div>
+                  <span className="font-medium text-ink">
+                    {rutinasPorId[sesion.rutina_id]?.nombre ?? 'Rutina eliminada'}
+                  </span>
+                  <p className="text-xs text-ink-muted">{formatearFecha(sesion.fecha)}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <span
+                    className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${
+                      sesion.completada
+                        ? 'bg-accent/10 text-accent'
+                        : 'border border-border text-ink-muted'
+                    }`}
+                  >
+                    {sesion.completada ? '✓ Completada' : 'En progreso'}
+                  </span>
+                  {duracion && <span className="text-xs text-ink-muted">{duracion}</span>}
+                </div>
+              </button>
+            )
+          })}
         </Card>
       )}
     </main>

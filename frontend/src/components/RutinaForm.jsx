@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getEjercicios } from '../api/ejercicios'
-import { createRutina } from '../api/rutinas'
+import { createRutina, updateRutina } from '../api/rutinas'
 import { Button } from './ui/Button'
 import { EmptyState } from './ui/EmptyState'
 
@@ -13,24 +13,39 @@ function nuevaFila(ejercicios) {
   }
 }
 
+function filasDesdeRutina(rutina) {
+  return rutina.ejercicios.map((item) => ({
+    ejercicio_id: item.ejercicio.id,
+    orden: item.orden,
+    series_objetivo: item.series_objetivo,
+    repeticiones_objetivo: item.repeticiones_objetivo,
+  }))
+}
+
 const CAMPO =
   'rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink ' +
   'focus:outline-none focus:ring-2 focus:ring-accent'
 
-export function RutinaForm({ onCreated, onCancel }) {
+export function RutinaForm({ rutinaExistente, onGuardado, onCancel }) {
+  const editando = Boolean(rutinaExistente)
+
   const [ejercicios, setEjercicios] = useState([])
   const [cargandoCatalogo, setCargandoCatalogo] = useState(true)
   const [error, setError] = useState(null)
   const [enviando, setEnviando] = useState(false)
 
-  const [nombre, setNombre] = useState('')
+  const [nombre, setNombre] = useState(rutinaExistente?.nombre ?? '')
   const [filas, setFilas] = useState([])
 
   useEffect(() => {
     getEjercicios()
       .then((ejerciciosData) => {
         setEjercicios(ejerciciosData)
-        setFilas(ejerciciosData.length > 0 ? [nuevaFila(ejerciciosData)] : [])
+        if (rutinaExistente) {
+          setFilas(filasDesdeRutina(rutinaExistente))
+        } else {
+          setFilas(ejerciciosData.length > 0 ? [nuevaFila(ejerciciosData)] : [])
+        }
       })
       .catch((err) => setError(err.message))
       .finally(() => setCargandoCatalogo(false))
@@ -55,10 +70,11 @@ export function RutinaForm({ onCreated, onCancel }) {
 
   async function manejarSubmit(evento) {
     evento.preventDefault()
+    if (filas.length === 0) return
     setError(null)
     setEnviando(true)
     try {
-      const rutina = await createRutina({
+      const datos = {
         nombre,
         ejercicios: filas.map((fila) => ({
           ejercicio_id: Number(fila.ejercicio_id),
@@ -66,8 +82,11 @@ export function RutinaForm({ onCreated, onCancel }) {
           series_objetivo: Number(fila.series_objetivo),
           repeticiones_objetivo: Number(fila.repeticiones_objetivo),
         })),
-      })
-      onCreated(rutina)
+      }
+      const rutina = editando
+        ? await updateRutina(rutinaExistente.id, datos)
+        : await createRutina(datos)
+      onGuardado(rutina)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -179,13 +198,19 @@ export function RutinaForm({ onCreated, onCancel }) {
         <p className="mt-1.5 text-xs text-ink-muted">Orden / Series / Repeticiones objetivo</p>
       </div>
 
+      {filas.length === 0 && (
+        <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-500">
+          Añade al menos un ejercicio para poder guardar la rutina.
+        </p>
+      )}
+
       {error && (
         <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-500">{error}</p>
       )}
 
       <div className="flex gap-3">
-        <Button type="submit" variant="primary" disabled={enviando}>
-          {enviando ? 'Guardando...' : 'Crear rutina'}
+        <Button type="submit" variant="primary" disabled={enviando || filas.length === 0}>
+          {enviando ? 'Guardando...' : editando ? 'Guardar cambios' : 'Crear rutina'}
         </Button>
         <Button type="button" variant="ghost" onClick={onCancel}>
           Cancelar

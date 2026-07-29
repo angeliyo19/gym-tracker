@@ -37,7 +37,7 @@ export function RutinasPage() {
           />
           <RutinaForm
             onCancel={() => setVista('lista')}
-            onCreated={() => {
+            onGuardado={() => {
               cargarRutinas()
               setVista('lista')
             }}

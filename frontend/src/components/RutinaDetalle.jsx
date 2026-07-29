@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getRutina, iniciarRutina } from '../api/rutinas'
+import { RutinaForm } from './RutinaForm'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
 import { EmptyState } from './ui/EmptyState'
@@ -12,14 +13,17 @@ export function RutinaDetalle({ rutinaId, onVolver }) {
   const [error, setError] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [iniciando, setIniciando] = useState(false)
+  const [editando, setEditando] = useState(false)
 
-  useEffect(() => {
+  function cargarRutina() {
     setCargando(true)
     getRutina(rutinaId)
       .then(setRutina)
       .catch((err) => setError(err.message))
       .finally(() => setCargando(false))
-  }, [rutinaId])
+  }
+
+  useEffect(cargarRutina, [rutinaId])
 
   async function manejarIniciar() {
     setError(null)
@@ -34,6 +38,29 @@ export function RutinaDetalle({ rutinaId, onVolver }) {
       setError(err.message)
       setIniciando(false)
     }
+  }
+
+  if (editando && rutina) {
+    return (
+      <div>
+        <Button variant="ghost" onClick={() => setEditando(false)} className="-ml-3">
+          ← Cancelar edición
+        </Button>
+
+        <div className="mt-4">
+          <PageHeader title={`Editar ${rutina.nombre}`} />
+        </div>
+
+        <RutinaForm
+          rutinaExistente={rutina}
+          onCancel={() => setEditando(false)}
+          onGuardado={() => {
+            setEditando(false)
+            cargarRutina()
+          }}
+        />
+      </div>
+    )
   }
 
   return (
@@ -54,9 +81,14 @@ export function RutinaDetalle({ rutinaId, onVolver }) {
             <PageHeader
               title={rutina.nombre}
               action={
-                <Button variant="primary" onClick={manejarIniciar} disabled={iniciando}>
-                  {iniciando ? 'Iniciando...' : 'Iniciar sesión'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="secondary" onClick={() => setEditando(true)}>
+                    Editar
+                  </Button>
+                  <Button variant="primary" onClick={manejarIniciar} disabled={iniciando}>
+                    {iniciando ? 'Iniciando...' : 'Iniciar sesión'}
+                  </Button>
+                </div>
               }
             />
           </div>

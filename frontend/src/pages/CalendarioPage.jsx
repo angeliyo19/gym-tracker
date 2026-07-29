@@ -25,6 +25,11 @@ function formatearFechaLocal(fecha) {
 }
 
 function sesionAEvento(sesion) {
+  // Una sesión ya empezada (tiene hora_inicio, aunque no se haya finalizado
+  // todavía) se muestra como evento con hora concreta; las que aún no se han
+  // tocado siguen mostrándose como "todo el día", ya que solo sabemos la
+  // fecha objetivo, no una hora real.
+  const empezada = sesion.hora_inicio != null
   const color = sesion.completada ? 'var(--success)' : 'var(--pendiente)'
   const colorTexto = sesion.completada
     ? 'var(--success-foreground)'
@@ -32,8 +37,9 @@ function sesionAEvento(sesion) {
   return {
     id: String(sesion.id),
     title: sesion.rutina.nombre,
-    start: sesion.fecha,
-    allDay: true,
+    start: empezada ? sesion.hora_inicio : sesion.fecha,
+    end: empezada && sesion.hora_fin ? sesion.hora_fin : undefined,
+    allDay: !empezada,
     startEditable: !sesion.completada,
     durationEditable: false,
     backgroundColor: color,

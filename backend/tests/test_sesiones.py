@@ -12,7 +12,17 @@ def _crear_ejercicio(client: TestClient, nombre: str = "Press banca") -> dict:
 
 
 def _crear_rutina(client: TestClient, headers: dict, **overrides) -> dict:
-    payload = {"nombre": "Push day", "ejercicios": []}
+    payload = {"nombre": "Push day"}
+    if "ejercicios" not in overrides:
+        ejercicio = _crear_ejercicio(client)
+        payload["ejercicios"] = [
+            {
+                "ejercicio_id": ejercicio["id"],
+                "orden": 1,
+                "series_objetivo": 3,
+                "repeticiones_objetivo": 10,
+            }
+        ]
     payload.update(overrides)
     respuesta = client.post("/api/v1/rutinas/", json=payload, headers=headers)
     assert respuesta.status_code == 201
@@ -335,6 +345,68 @@ def test_finalizar_sesion_es_idempotente(client: TestClient) -> None:
     assert primera.status_code == 200
     assert segunda.status_code == 200
     assert segunda.json()["completada"] is True
+
+
+def test_finalizar_sesion_fija_hora_fin(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    rutina = _crear_rutina(client, headers)
+    sesion = _iniciar_rutina(client, rutina["id"], headers)
+
+    respuesta = client.post(f"/api/v1/sesiones/{sesion['id']}/finalizar", headers=headers)
+
+    assert respuesta.json()["hora_fin"] is not None
+
+
+def test_finalizar_sesion_sin_series_fija_hora_inicio_igual_a_hora_fin(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    rutina = _crear_rutina(client, headers)
+    sesion = _iniciar_rutina(client, rutina["id"], headers)
+    assert sesion["hora_inicio"] is None
+
+    respuesta = client.post(f"/api/v1/sesiones/{sesion['id']}/finalizar", headers=headers)
+
+    cuerpo = respuesta.json()
+    assert cuerpo["hora_inicio"] is not None
+    assert cuerpo["hora_inicio"] == cuerpo["hora_fin"]
+
+
+def test_finalizar_sesion_no_sobrescribe_hora_inicio_ya_fijada(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    press = _crear_ejercicio(client, "Press banca")
+    rutina = _crear_rutina(
+        client,
+        headers,
+        ejercicios=[
+            {"ejercicio_id": press["id"], "orden": 1, "series_objetivo": 3, "repeticiones_objetivo": 8}
+        ],
+    )
+    sesion = _iniciar_rutina(client, rutina["id"], headers)
+    client.post(
+        f"/api/v1/sesiones/{sesion['id']}/series/",
+        json={"ejercicio_id": press["id"], "peso": 80.0, "repeticiones": 8},
+        headers=headers,
+    )
+    hora_inicio_tras_serie = client.get(f"/api/v1/sesiones/{sesion['id']}", headers=headers).json()[
+        "hora_inicio"
+    ]
+
+    respuesta = client.post(f"/api/v1/sesiones/{sesion['id']}/finalizar", headers=headers)
+
+    cuerpo = respuesta.json()
+    assert cuerpo["hora_inicio"] == hora_inicio_tras_serie
+    assert cuerpo["hora_fin"] is not None
+    assert cuerpo["hora_fin"] != cuerpo["hora_inicio"]
+
+
+def test_finalizar_sesion_idempotente_no_cambia_hora_fin(client: TestClient) -> None:
+    _, headers = crear_usuario_autenticado(client)
+    rutina = _crear_rutina(client, headers)
+    sesion = _iniciar_rutina(client, rutina["id"], headers)
+
+    primera = client.post(f"/api/v1/sesiones/{sesion['id']}/finalizar", headers=headers)
+    segunda = client.post(f"/api/v1/sesiones/{sesion['id']}/finalizar", headers=headers)
+
+    assert primera.json()["hora_fin"] == segunda.json()["hora_fin"]
 
 
 def test_finalizar_sesion_de_otro_usuario(client: TestClient) -> None:

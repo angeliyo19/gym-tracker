@@ -13,22 +13,23 @@ export function SesionEnVivoPage() {
   const [error, setError] = useState(null)
   const [finalizando, setFinalizando] = useState(false)
 
-  // location.state es solo una optimización: si venimos de "Iniciar sesión"
-  // en RutinaDetalle ya tenemos los datos a mano y evitamos el parpadeo de
-  // carga. El endpoint sigue siendo la fuente de verdad y es lo único que
-  // sostiene la pantalla ante una recarga o un acceso directo por URL.
+  // location.state es solo una optimización para evitar el parpadeo de carga
+  // al venir de "Iniciar sesión" en RutinaDetalle: se usa como valor inicial
+  // optimista, pero SIEMPRE se vuelve a pedir al backend en el montaje. Un F5
+  // no limpia location.state (el navegador conserva window.history.state al
+  // recargar el mismo documento), así que si aquí nos fiáramos únicamente de
+  // "ya tengo location.state, no hace falta pedir nada", una recarga después
+  // de guardar una serie seguiría mostrando para siempre la foto vieja
+  // capturada en la navegación original (sin la serie recién guardada).
   const [sesion, setSesion] = useState(location.state?.sesion ?? null)
   const [cargando, setCargando] = useState(!location.state?.sesion)
 
   useEffect(() => {
-    if (location.state?.sesion) return
-
-    setCargando(true)
     getSesion(sesionId)
       .then(setSesion)
       .catch((err) => setError(err.message))
       .finally(() => setCargando(false))
-  }, [sesionId, location.state])
+  }, [sesionId])
 
   const rutina = sesion?.rutina ?? null
   const soloLectura = sesion?.completada ?? false
