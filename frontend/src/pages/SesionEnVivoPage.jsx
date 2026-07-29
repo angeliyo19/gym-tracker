@@ -31,9 +31,14 @@ export function SesionEnVivoPage() {
   }, [sesionId, location.state])
 
   const rutina = sesion?.rutina ?? null
+  const soloLectura = sesion?.completada ?? false
   const ultimasSeries = sesion?.ultimas_series ?? []
   const referenciasPorEjercicio = Object.fromEntries(
     ultimasSeries.map((referencia) => [referencia.ejercicio_id, referencia]),
+  )
+  const seriesRegistradas = sesion?.series_registradas ?? []
+  const seriesGuardadasPorEjercicio = Object.fromEntries(
+    seriesRegistradas.map((grupo) => [grupo.ejercicio_id, grupo.series]),
   )
 
   async function manejarFinalizar() {
@@ -76,11 +81,21 @@ export function SesionEnVivoPage() {
     <main className="mx-auto max-w-xl px-8 py-10">
       <PageHeader
         title={rutina.nombre}
-        description="Registra tus series a medida que las completas."
+        description={
+          soloLectura
+            ? 'Sesión completada. Estás viendo un registro histórico.'
+            : 'Registra tus series a medida que las completas.'
+        }
         action={
-          <Button variant="primary" onClick={manejarFinalizar} disabled={finalizando}>
-            {finalizando ? 'Finalizando...' : 'Finalizar sesión'}
-          </Button>
+          soloLectura ? (
+            <span className="whitespace-nowrap rounded-full bg-accent/10 px-3 py-1.5 text-sm font-medium text-accent">
+              ✓ Completada
+            </span>
+          ) : (
+            <Button variant="primary" onClick={manejarFinalizar} disabled={finalizando}>
+              {finalizando ? 'Finalizando...' : 'Finalizar sesión'}
+            </Button>
+          )
         }
       />
 
@@ -92,7 +107,11 @@ export function SesionEnVivoPage() {
         <div className="mt-6">
           <EmptyState
             title="Esta rutina no tiene ejercicios"
-            description="No hay nada que registrar. Puedes finalizar la sesión directamente."
+            description={
+              soloLectura
+                ? 'No había nada que registrar en esta sesión.'
+                : 'No hay nada que registrar. Puedes finalizar la sesión directamente.'
+            }
           />
         </div>
       )}
@@ -108,6 +127,8 @@ export function SesionEnVivoPage() {
               seriesObjetivo={item.series_objetivo}
               repeticionesObjetivo={item.repeticiones_objetivo}
               referencia={referenciasPorEjercicio[item.ejercicio.id]}
+              seriesGuardadas={seriesGuardadasPorEjercicio[item.ejercicio.id] ?? []}
+              soloLectura={soloLectura}
             />
           ))}
       </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getRutinas } from '../api/rutinas'
+import { EntrenamientoTabs } from '../components/EntrenamientoTabs'
 import { RutinasList } from '../components/RutinasList'
 import { RutinaForm } from '../components/RutinaForm'
 import { RutinaDetalle } from '../components/RutinaDetalle'
@@ -46,6 +47,8 @@ export function RutinasPage() {
 
       {vista === 'lista' && (
         <div>
+          <EntrenamientoTabs />
+
           {cargando && <p className="text-ink-muted">Cargando...</p>}
 
           {error && (
